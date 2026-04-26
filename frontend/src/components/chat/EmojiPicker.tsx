@@ -6,14 +6,15 @@ import data from "@emoji-mart/data";
 
 interface EmojiPickerProps {
   onChange: (value: string) => void;
+  triggerClassName?: string;
 }
 
-const EmojiPicker = ({ onChange }: EmojiPickerProps) => {
+const EmojiPicker = ({ onChange, triggerClassName }: EmojiPickerProps) => {
   const { isDark } = useThemeStore();
 
   return (
     <Popover>
-      <PopoverTrigger className="cursor-pointer">
+      <PopoverTrigger className={triggerClassName ?? "cursor-pointer"}>
         <Smile className="size-4" />
       </PopoverTrigger>
 

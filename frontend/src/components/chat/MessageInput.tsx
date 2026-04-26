@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { Conversation } from "@/types/chat";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { Plus, Send } from "lucide-react";
 import { Input } from "../ui/input";
@@ -32,6 +32,7 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
   const [selectedTopicLabels, setSelectedTopicLabels] = useState<string[]>([]);
   const [questionLimitInput, setQuestionLimitInput] = useState("40");
   const [durationMinutesInput, setDurationMinutesInput] = useState("50");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   if (!user) return;
 
@@ -206,9 +207,31 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
     }
   };
 
+  const handleInputShellPointerDown = (
+    e: React.PointerEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
+  ) => {
+    const target = e.target as HTMLElement | null;
+
+    if (
+      !target ||
+      target.closest("input, button, [role='button'], a, textarea, select, label")
+    ) {
+      return;
+    }
+
+    inputRef.current?.focus({ preventScroll: true });
+  };
+
   return (
-    <div className="flex items-center gap-2 p-3 min-h-[56px] bg-background">
+    <form
+      className="flex min-h-[56px] items-center gap-2 bg-background px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void sendMessage();
+      }}
+    >
       <Button
+        type="button"
         variant="ghost"
         size="icon"
         className="hover:bg-primary/10 transition-smooth"
@@ -217,8 +240,13 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
         <Plus className="size-4" />
       </Button>
 
-      <div className="flex-1 relative">
+      <div
+        className="relative flex-1"
+        onPointerDown={handleInputShellPointerDown}
+        onTouchStart={handleInputShellPointerDown}
+      >
         <Input
+          ref={inputRef}
           onKeyPress={handleKeyPress}
           value={value}
           onChange={(e) => setValue(e.target.value)}
@@ -227,26 +255,20 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
               ? "Nhập tin nhắn học tập..."
               : "Soạn tin nhắn..."
           }
-          className="pr-20 h-9 bg-white border-border/50 focus:border-primary/50 transition-smooth resize-none"
+          className="relative z-0 h-10 bg-white pr-20 text-base border-border/50 focus:border-primary/50 transition-smooth resize-none"
         ></Input>
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-          <Button
-            asChild
-            variant="ghost"
-            size="icon"
-            className="size-8 hover:bg-primary/10 transition-smooth"
-          >
-            <div>
-              <EmojiPicker
-                onChange={(emoji: string) => setValue(`${value}${emoji}`)}
-              />
-            </div>
-          </Button>
+        <div className="pointer-events-none absolute top-1/2 right-2 z-10 flex -translate-y-1/2 items-center gap-1">
+          <div className="pointer-events-auto">
+            <EmojiPicker
+              onChange={(emoji: string) => setValue(`${value}${emoji}`)}
+              triggerClassName="inline-flex size-8 items-center justify-center rounded-md transition-smooth hover:bg-primary/10"
+            />
+          </div>
         </div>
       </div>
 
       <Button
-        onClick={sendMessage}
+        type="submit"
         className="bg-gradient-chat hover:shadow-glow transition-smooth hover:scale-105"
         disabled={!value.trim()}
       >
@@ -381,7 +403,7 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </form>
   );
 };
 
