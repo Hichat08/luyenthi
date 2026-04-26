@@ -9,6 +9,7 @@ import conversationRoute from "./routes/conversationRoute.js";
 import subjectRoute from "./routes/subjectRoute.js";
 import rankingRoute from "./routes/rankingRoute.js";
 import examRoute from "./routes/examRoute.js";
+import adminRoute from "./routes/adminRoute.js";
 import cookieParser from "cookie-parser";
 import { protectedRoute } from "./middlewares/authMiddleware.js";
 import cors from "cors";
@@ -51,6 +52,7 @@ app.use("/api/conversations", conversationRoute);
 app.use("/api/subjects", subjectRoute);
 app.use("/api/exams", examRoute);
 app.use("/api/ranking", rankingRoute);
+app.use("/api/admin", adminRoute);
 
 connectDB()
   .then(() => {

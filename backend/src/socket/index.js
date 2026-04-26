@@ -74,4 +74,17 @@ io.on("connection", async (socket) => {
   }
 });
 
-export { io, app, server };
+const emitAdminNotification = ({ audience, recipientIds = [], payload }) => {
+  if (audience === "all") {
+    recipientIds.forEach((recipientId) => {
+      io.to(`${recipientId}`).emit("admin-notification", payload);
+    });
+    return;
+  }
+
+  recipientIds.forEach((recipientId) => {
+    io.to(`${recipientId}`).emit("admin-notification", payload);
+  });
+};
+
+export { io, app, server, emitAdminNotification };

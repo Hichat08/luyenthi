@@ -5,6 +5,9 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
+const resolveLandingPath = () =>
+  useAuthStore.getState().user?.role === "admin" ? "/admin" : "/home";
+
 const SignInPage = () => {
   const navigate = useNavigate();
   const { accessToken, restoreSession } = useAuthStore();
@@ -12,7 +15,7 @@ const SignInPage = () => {
 
   useEffect(() => {
     if (accessToken) {
-      navigate("/home", { replace: true });
+      navigate(resolveLandingPath(), { replace: true });
       setCheckingSession(false);
       return;
     }
@@ -21,7 +24,7 @@ const SignInPage = () => {
       const restored = await restoreSession();
 
       if (restored) {
-        navigate("/home", { replace: true });
+        navigate(resolveLandingPath(), { replace: true });
         return;
       }
 

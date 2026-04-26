@@ -1,3 +1,5 @@
+export type UserRole = "user" | "admin";
+
 export interface SchoolSession {
   start: string;
   end: string;
@@ -25,6 +27,7 @@ export interface User {
   _id: string;
   userCode?: string;
   username: string;
+  role: UserRole;
   email: string;
   displayName: string;
   classroom?: string;

@@ -64,6 +64,12 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+      index: true,
+    },
     classroom: {
       type: String,
       trim: true,
@@ -72,6 +78,11 @@ const userSchema = new mongoose.Schema(
     dateOfBirth: {
       type: Date,
       default: null,
+    },
+    lastActiveAt: {
+      type: Date,
+      default: null,
+      index: true,
     },
     userCode: {
       type: String,

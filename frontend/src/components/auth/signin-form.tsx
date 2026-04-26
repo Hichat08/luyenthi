@@ -100,7 +100,8 @@ export function SigninForm() {
         await storeBrowserCredential();
       }
 
-      navigate("/home");
+      const role = useAuthStore.getState().user?.role;
+      navigate(role === "admin" ? "/admin" : "/home");
     }
   };
 

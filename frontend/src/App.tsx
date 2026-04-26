@@ -17,6 +17,10 @@ import MultipleChoiceExamPage from "./pages/MultipleChoiceExamPage";
 import LiteratureExamPage from "./pages/LiteratureExamPage";
 import ExamResultPage from "./pages/ExamResultPage";
 import ExamDetailedSolutionPage from "./pages/ExamDetailedSolutionPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminNotificationsPage from "./pages/AdminNotificationsPage";
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
+import AdminExamBuilderPage from "./pages/AdminExamBuilderPage";
 
 function App() {
   const { isDark, setTheme } = useThemeStore();
@@ -51,7 +55,7 @@ function App() {
           />
 
           {/* protectect routes */}
-          <Route element={<ProtectedRoute />}>
+          <Route element={<ProtectedRoute allowedRoles={["user"]} />}>
             <Route
               path="/home"
               element={<HomePage />}
@@ -95,6 +99,24 @@ function App() {
             <Route
               path="/"
               element={<Navigate to="/home" replace />}
+            />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+            <Route
+              path="/admin"
+              element={<AdminDashboardPage />}
+            />
+            <Route
+              path="/admin/notifications"
+              element={<AdminNotificationsPage />}
+            />
+            <Route
+              path="/admin/analytics"
+              element={<AdminAnalyticsPage />}
+            />
+            <Route
+              path="/admin/exams/new"
+              element={<AdminExamBuilderPage />}
             />
           </Route>
         </Routes>

@@ -1,4 +1,5 @@
 import api from "@/lib/axios";
+import type { RemoteNotificationPayload } from "@/components/chat/notification-data";
 
 export const userService = {
   uploadAvatar: async (formData: FormData) => {
@@ -58,5 +59,12 @@ export const userService = {
     });
 
     return res.data;
+  },
+  getNotifications: async () => {
+    const res = await api.get("/users/notifications", {
+      withCredentials: true,
+    });
+
+    return res.data.notifications as RemoteNotificationPayload[];
   },
 };

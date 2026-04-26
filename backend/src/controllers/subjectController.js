@@ -1,6 +1,18 @@
 import Subject from "../models/Subject.js";
 
-const defaultSubjectNames = ["Toán", "Văn", "Anh", "Lý", "Hóa", "Sinh", "Sử"];
+const defaultSubjectNames = [
+  "Toán",
+  "Ngữ văn",
+  "Tiếng Anh",
+  "Vật lý",
+  "Hóa học",
+  "Sinh học",
+  "Lịch sử",
+  "Địa lý",
+  "Tin học",
+  "Công nghệ",
+  "Giáo dục kinh tế và pháp luật",
+];
 
 const normalizeSubjectName = (value) =>
   `${value ?? ""}`

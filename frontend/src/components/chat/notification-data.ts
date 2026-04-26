@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   BookOpen,
   Clock3,
+  Megaphone,
   MessageCircleMore,
   Settings,
   Users,
@@ -26,6 +27,14 @@ export type NotificationItem = {
   avatarUrl?: string;
   ctaPrimary?: string;
   ctaSecondary?: string;
+};
+
+export type RemoteNotificationPayload = {
+  id: string;
+  title: string;
+  body: string;
+  category: Exclude<NotificationCategory, "all" | "community">;
+  createdAt?: string;
 };
 
 export const filterLabels: Record<NotificationCategory, string> = {
@@ -79,6 +88,25 @@ const getUniqueSelectedSubjects = (user?: User | null) =>
       ? user.studyGoals.selectedSubjects
       : user?.studyGoals?.subjects?.map((item) => item.subject) ?? []
   ).filter((subject, index, array) => Boolean(subject) && array.indexOf(subject) === index);
+
+export const buildRemoteNotificationItem = (
+  notification: RemoteNotificationPayload
+): NotificationItem => ({
+  id: `admin-${notification.id}`,
+  title: notification.title,
+  body: notification.body,
+  detail: notification.category === "study" ? "Thông báo học tập" : "Thông báo hệ thống",
+  section: getNotificationSection(notification.createdAt),
+  timeLabel: getRelativeTimeLabel(notification.createdAt),
+  category: notification.category,
+  unread: true,
+  icon: notification.category === "study" ? BookOpen : Megaphone,
+  iconClassName:
+    notification.category === "study"
+      ? "bg-primary/10 text-primary"
+      : "bg-primary/12 text-primary",
+  ctaPrimary: notification.category === "study" ? "Mở lộ trình" : undefined,
+});
 
 export function buildNotifications(
   user?: User | null,

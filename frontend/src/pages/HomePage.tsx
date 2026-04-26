@@ -16,6 +16,7 @@ import {
   rankingService,
   type DailyProgress,
 } from "@/services/rankingService";
+import { userService } from "@/services/userService";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -81,7 +82,12 @@ const HomePage = () => {
     fetchCommunityConversation,
     fetchConversations,
   } = useChatStore();
-  const { items: notificationItems, unreadCount, syncNotifications } = useNotificationStore();
+  const {
+    items: notificationItems,
+    unreadCount,
+    syncNotifications,
+    setRemoteNotifications,
+  } = useNotificationStore();
   const [showNotifications, setShowNotifications] = useState(
     Boolean(routeState?.openNotifications)
   );
@@ -136,6 +142,32 @@ const HomePage = () => {
   useEffect(() => {
     syncNotifications(user, conversations);
   }, [conversations, syncNotifications, user]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchRemoteNotifications = async () => {
+      try {
+        const notifications = await userService.getNotifications();
+
+        if (!cancelled) {
+          setRemoteNotifications(notifications, user, conversations);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Lỗi khi tải notification từ server", error);
+        }
+      }
+    };
+
+    if (user?._id) {
+      void fetchRemoteNotifications();
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setRemoteNotifications, user]);
 
   useEffect(() => {
     let cancelled = false;

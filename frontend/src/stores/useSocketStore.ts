@@ -4,7 +4,10 @@ import { useAuthStore } from "./useAuthStore";
 import type { SocketState } from "@/types/store";
 import { useChatStore } from "./useChatStore";
 import { useNotificationStore } from "./useNotificationStore";
-import { buildMessageNotification } from "@/components/chat/notification-data";
+import {
+  buildMessageNotification,
+  buildRemoteNotificationItem,
+} from "@/components/chat/notification-data";
 import type { Conversation } from "@/types/chat";
 
 const baseURL = import.meta.env.VITE_SOCKET_URL;
@@ -206,6 +209,17 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     socket.on("new-group", (conversation) => {
       useChatStore.getState().addConvo(conversation);
       socket.emit("join-conversation", conversation._id);
+    });
+
+    socket.on("admin-notification", (notification) => {
+      const { user } = useAuthStore.getState();
+      useNotificationStore
+        .getState()
+        .addLiveNotification(
+          buildRemoteNotificationItem(notification),
+          user,
+          useChatStore.getState().conversations
+        );
     });
   },
   disconnectSocket: () => {

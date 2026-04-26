@@ -49,6 +49,24 @@ const practiceAttemptSchema = new mongoose.Schema(
       type: [Date],
       default: [],
     },
+    suspiciousExitCount: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    autoSubmittedForCheating: {
+      type: Boolean,
+      default: false,
+    },
+    flaggedForReview: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    antiCheatEvents: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,

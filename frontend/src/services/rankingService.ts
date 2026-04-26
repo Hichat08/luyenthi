@@ -78,6 +78,12 @@ export const rankingService = {
     correctCount: number;
     wrongCount: number;
     timeSpentSeconds?: number;
+    antiCheat?: {
+      suspiciousExitCount: number;
+      autoSubmittedForCheating: boolean;
+      flaggedForReview: boolean;
+      events: string[];
+    };
   }) => {
     const res = await api.post("/ranking/attempts", payload, {
       withCredentials: true,

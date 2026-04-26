@@ -1,4 +1,5 @@
 import { buildNotifications, type NotificationItem } from "@/components/chat/notification-data";
+import { buildRemoteNotificationItem, type RemoteNotificationPayload } from "@/components/chat/notification-data";
 import type { Conversation } from "@/types/chat";
 import type { User } from "@/types/user";
 import { create } from "zustand";
@@ -7,8 +8,18 @@ import { persist } from "zustand/middleware";
 type NotificationState = {
   items: NotificationItem[];
   liveItems: NotificationItem[];
+  remoteItems: NotificationItem[];
   seenIds: string[];
-  syncNotifications: (user?: User | null, conversations?: Conversation[]) => void;
+  syncNotifications: (
+    user?: User | null,
+    conversations?: Conversation[],
+    remoteItems?: NotificationItem[]
+  ) => void;
+  setRemoteNotifications: (
+    notifications: RemoteNotificationPayload[],
+    user?: User | null,
+    conversations?: Conversation[]
+  ) => void;
   addLiveNotification: (
     item: NotificationItem,
     user?: User | null,
@@ -24,9 +35,10 @@ type NotificationState = {
 const buildMergedItems = (
   user: User | null | undefined,
   conversations: Conversation[],
-  liveItems: NotificationItem[]
+  liveItems: NotificationItem[],
+  remoteItems: NotificationItem[]
 ) => {
-  const mergedItems = [...liveItems, ...buildNotifications(user, conversations)];
+  const mergedItems = [...liveItems, ...remoteItems, ...buildNotifications(user, conversations)];
   const uniqueItems = new Map<string, NotificationItem>();
 
   mergedItems.forEach((item) => {
@@ -46,21 +58,33 @@ export const useNotificationStore = create<NotificationState>()(
     (set, get) => ({
       items: [],
       liveItems: [],
+      remoteItems: [],
       seenIds: [],
       unreadCount: 0,
-      syncNotifications: (user, conversations = []) => {
-        const items = buildMergedItems(user, conversations, get().liveItems);
+      syncNotifications: (user, conversations = [], remoteItems = get().remoteItems) => {
+        const items = buildMergedItems(user, conversations, get().liveItems, remoteItems);
         const seenIds = get().seenIds;
         const unreadCount = getUnreadCount(items, seenIds);
 
         set({ items, unreadCount });
+      },
+      setRemoteNotifications: (notifications, user, conversations = []) => {
+        const remoteItems = notifications.map(buildRemoteNotificationItem);
+        const items = buildMergedItems(user, conversations, get().liveItems, remoteItems);
+        const seenIds = get().seenIds;
+
+        set({
+          remoteItems,
+          items,
+          unreadCount: getUnreadCount(items, seenIds),
+        });
       },
       addLiveNotification: (item, user, conversations = []) => {
         const liveItems = [
           item,
           ...get().liveItems.filter((existingItem) => existingItem.id !== item.id),
         ].slice(0, 20);
-        const items = buildMergedItems(user, conversations, liveItems);
+        const items = buildMergedItems(user, conversations, liveItems, get().remoteItems);
         const seenIds = get().seenIds;
 
         set({
@@ -94,6 +118,7 @@ export const useNotificationStore = create<NotificationState>()(
         set({
           items: [],
           liveItems: [],
+          remoteItems: [],
           seenIds: [],
           unreadCount: 0,
         });

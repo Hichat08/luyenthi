@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 import PracticeAttempt from "../models/PracticeAttempt.js";
+import Notification from "../models/Notification.js";
+import User from "../models/User.js";
+import { emitAdminNotification } from "../socket/index.js";
 
 const DAILY_EXAM_TARGET = 10;
 
@@ -95,6 +98,47 @@ const getTodayProgressSnapshot = async (userId) => {
       100
     ),
   };
+};
+
+const buildAttemptScore = (attempt) => {
+  const totalQuestions = (attempt.correctCount ?? 0) + (attempt.wrongCount ?? 0);
+  return totalQuestions > 0 ? ((attempt.correctCount ?? 0) / totalQuestions) * 10 : 0;
+};
+
+const sendAntiCheatAlertToAdmins = async ({
+  studentId,
+  studentName,
+  examTitle,
+  suspiciousExitCount,
+}) => {
+  const admins = await User.find({ role: "admin" }).select("_id");
+
+  if (admins.length === 0) {
+    return;
+  }
+
+  const recipients = admins.map((admin) => admin._id);
+  const notification = await Notification.create({
+    title: "Cần chú ý thí sinh có dấu hiệu rời khỏi bài thi",
+    body: `${studentName} đã rời ứng dụng ${suspiciousExitCount} lần khi đang thi "${examTitle}". Bài làm đã bị tự động nộp và cần admin kiểm tra.`,
+    category: "system",
+    audience: "selected",
+    recipients,
+    createdBy: studentId,
+  });
+
+  emitAdminNotification({
+    audience: "selected",
+    recipientIds: recipients.map((id) => id.toString()),
+    payload: {
+      id: notification._id,
+      title: notification.title,
+      body: notification.body,
+      category: notification.category,
+      audience: notification.audience,
+      createdAt: notification.createdAt,
+    },
+  });
 };
 
 const buildLeaderboard = async (period, currentUserId) => {
@@ -318,6 +362,7 @@ export const submitPracticeAttempt = async (req, res) => {
     const userId = req.user._id;
     const { examId, examTitle, subject, correctCount, wrongCount, timeSpentSeconds } =
       req.body ?? {};
+    const antiCheat = req.body?.antiCheat ?? {};
 
     const normalizedExamId = `${examId ?? ""}`.trim();
 
@@ -328,6 +373,12 @@ export const submitPracticeAttempt = async (req, res) => {
     const normalizedCorrectCount = Number(correctCount);
     const normalizedWrongCount = Number(wrongCount);
     const normalizedTimeSpentSeconds = Number(timeSpentSeconds ?? 0);
+    const suspiciousExitCount = Math.max(Number(antiCheat?.suspiciousExitCount ?? 0) || 0, 0);
+    const autoSubmittedForCheating = Boolean(antiCheat?.autoSubmittedForCheating);
+    const flaggedForReview = Boolean(antiCheat?.flaggedForReview) || suspiciousExitCount >= 3;
+    const antiCheatEvents = Array.isArray(antiCheat?.events)
+      ? antiCheat.events.map((event) => `${event ?? ""}`.trim()).filter(Boolean)
+      : [];
 
     if (
       Number.isNaN(normalizedCorrectCount) ||
@@ -358,6 +409,10 @@ export const submitPracticeAttempt = async (req, res) => {
           wrongCount: normalizedWrongCount,
           timeSpentSeconds: normalizedTimeSpentSeconds,
           submittedAt,
+          suspiciousExitCount,
+          autoSubmittedForCheating,
+          flaggedForReview,
+          antiCheatEvents,
         },
         $push: {
           submissionHistory: submittedAt,
@@ -372,6 +427,15 @@ export const submitPracticeAttempt = async (req, res) => {
 
     const { currentUser } = await buildLeaderboard("all", userId);
     const todayProgress = await getTodayProgressSnapshot(userId);
+
+    if (flaggedForReview) {
+      await sendAntiCheatAlertToAdmins({
+        studentId: userId,
+        studentName: req.user?.displayName || req.user?.username || "Một học sinh",
+        examTitle: `${examTitle ?? ""}`.trim() || normalizedExamId,
+        suspiciousExitCount,
+      });
+    }
 
     return res.status(200).json({
       attempt,

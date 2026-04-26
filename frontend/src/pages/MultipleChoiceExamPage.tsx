@@ -29,7 +29,7 @@ import {
   Square,
   Tag,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
@@ -104,6 +104,11 @@ const MultipleChoiceExamPage = () => {
   const [durationMinutes, setDurationMinutes] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
   const [attemptExamId, setAttemptExamId] = useState<string | null>(null);
+  const [, setExitAttemptCount] = useState(0);
+  const [, setExitEvents] = useState<string[]>([]);
+  const exitAttemptCountRef = useRef(0);
+  const exitEventsRef = useRef<string[]>([]);
+  const autoSubmittedRef = useRef(false);
 
   useEffect(() => {
     if (!examId) {
@@ -130,6 +135,11 @@ const MultipleChoiceExamPage = () => {
       setConfirmOpen(false);
       setHasStarted(false);
       setAttemptExamId(null);
+      setExitAttemptCount(0);
+      setExitEvents([]);
+      exitAttemptCountRef.current = 0;
+      exitEventsRef.current = [];
+      autoSubmittedRef.current = false;
       setSelectedTopicLabels(
         launchState?.selectedTopicLabels?.length ? launchState.selectedTopicLabels : topicLabels
       );
@@ -236,7 +246,15 @@ const MultipleChoiceExamPage = () => {
     return () => window.clearInterval(timer);
   }, [hasStarted, preparedQuestions.length, timeLeft]);
 
-  const handleSubmitExam = async (autoSubmit = false) => {
+  const handleSubmitExam = async (
+    autoSubmit = false,
+    antiCheatOverride?: {
+      suspiciousExitCount: number;
+      autoSubmittedForCheating: boolean;
+      flaggedForReview: boolean;
+      events: string[];
+    }
+  ) => {
     if (!exam || !preparedQuestions.length || timeLeft === null || isSubmitting) {
       return;
     }
@@ -268,6 +286,13 @@ const MultipleChoiceExamPage = () => {
         correctCount,
         wrongCount,
         timeSpentSeconds,
+        antiCheat:
+          antiCheatOverride ?? {
+            suspiciousExitCount: exitAttemptCountRef.current,
+            autoSubmittedForCheating: false,
+            flaggedForReview: exitAttemptCountRef.current >= 3,
+            events: exitEventsRef.current,
+          },
       });
 
       const resultState: ExamResultState = {
@@ -334,6 +359,63 @@ const MultipleChoiceExamPage = () => {
 
     void handleSubmitExam(true);
   }, [hasStarted, timeLeft]);
+
+  useEffect(() => {
+    if (!hasStarted) {
+      return;
+    }
+
+    const registerExitAttempt = (source: string) => {
+      if (document.visibilityState !== "hidden" || autoSubmittedRef.current || isSubmitting) {
+        return;
+      }
+
+      const nextCount = exitAttemptCountRef.current + 1;
+      const nextEvents = [...exitEventsRef.current, source];
+
+      exitAttemptCountRef.current = nextCount;
+      exitEventsRef.current = nextEvents;
+      setExitAttemptCount(nextCount);
+      setExitEvents(nextEvents);
+
+      if (nextCount >= 3) {
+        autoSubmittedRef.current = true;
+        toast.error("Bạn đã rời app 3 lần. Hệ thống tự động nộp bài và báo admin.");
+        void handleSubmitExam(true, {
+          suspiciousExitCount: nextCount,
+          autoSubmittedForCheating: true,
+          flaggedForReview: true,
+          events: nextEvents,
+        });
+        return;
+      }
+
+      toast.warning(`Cảnh báo gian lận: bạn đã rời app ${nextCount}/3 lần.`);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        registerExitAttempt("visibility-hidden");
+      }
+    };
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasStarted || isSubmitting) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasStarted, isSubmitting]);
 
   const handleToggleTopic = (topicLabel: string) => {
     setSelectedTopicLabels((current) =>
@@ -456,6 +538,22 @@ const MultipleChoiceExamPage = () => {
     );
   };
 
+  const handleNavigateBack = () => {
+    if (
+      hasStarted &&
+      !window.confirm("Bạn có chắc muốn rời khỏi bài thi? Tiến trình hiện tại có thể bị mất.")
+    ) {
+      return;
+    }
+
+    if (launchState?.launchSource === "community") {
+      navigate("/chat");
+      return;
+    }
+
+    navigate(`/practice/${exam.subjectSlug}`);
+  };
+
   return (
     <>
       <div className="min-h-svh bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.35)_100%)] text-foreground">
@@ -464,11 +562,7 @@ const MultipleChoiceExamPage = () => {
             <div className="flex min-w-0 items-center gap-3">
               <button
                 type="button"
-                onClick={() =>
-                  launchState?.launchSource === "community"
-                    ? navigate("/chat")
-                    : navigate(`/practice/${exam.subjectSlug}`)
-                }
+                onClick={handleNavigateBack}
                 className="grid size-10 place-items-center rounded-xl text-primary transition hover:bg-primary/10"
                 aria-label="Quay lại danh sách đề"
               >

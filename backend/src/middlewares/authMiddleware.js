@@ -29,7 +29,20 @@ export const protectedRoute = async (req, res, next) => {
       return res.status(404).json({ message: "người dùng không tồn tại." });
     }
 
+    if (!user.role) {
+      user.role = "user";
+      await user.save();
+    }
+
     await ensureUserCode(user);
+
+    const shouldTouchActivity =
+      !user.lastActiveAt || Date.now() - new Date(user.lastActiveAt).getTime() > 5 * 60 * 1000;
+
+    if (shouldTouchActivity) {
+      user.lastActiveAt = new Date();
+      await user.save();
+    }
 
     // trả user về trong req
     req.user = user;
@@ -50,3 +63,17 @@ export const protectedRoute = async (req, res, next) => {
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
+
+export const authorizeRoles =
+  (...allowedRoles) =>
+  (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Bạn chưa đăng nhập." });
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Bạn không có quyền truy cập." });
+    }
+
+    next();
+  };

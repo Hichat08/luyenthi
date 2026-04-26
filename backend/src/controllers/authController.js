@@ -9,9 +9,33 @@ import { createUniqueUserCode } from "../utils/userCode.js";
 const ACCESS_TOKEN_TTL = "30m"; // thuờng là dưới 15m
 const REFRESH_TOKEN_TTL = 14 * 24 * 60 * 60 * 1000; // 14 ngày
 
+const resolveRequestedRole = (requestedRole, adminSecret) => {
+  if (requestedRole !== "admin") {
+    return "user";
+  }
+
+  if (
+    process.env.ADMIN_REGISTRATION_SECRET &&
+    adminSecret === process.env.ADMIN_REGISTRATION_SECRET
+  ) {
+    return "admin";
+  }
+
+  return null;
+};
+
 export const signUp = async (req, res) => {
   try {
-    const { username, password, email, firstName, lastName, classroom } = req.body;
+    const {
+      username,
+      password,
+      email,
+      firstName,
+      lastName,
+      classroom,
+      role: requestedRole,
+      adminSecret,
+    } = req.body;
 
     if (!username || !password || !email || !firstName || !lastName || !classroom) {
       return res.status(400).json({
@@ -20,8 +44,18 @@ export const signUp = async (req, res) => {
       });
     }
 
+    const normalizedUsername = username.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
+    const role = resolveRequestedRole(requestedRole, adminSecret);
+
+    if (!role) {
+      return res.status(403).json({
+        message: "Không đủ quyền để tạo tài khoản admin.",
+      });
+    }
+
     // kiểm tra username tồn tại chưa
-    const duplicate = await User.findOne({ username });
+    const duplicate = await User.findOne({ username: normalizedUsername });
 
     if (duplicate) {
       return res.status(409).json({ message: "username đã tồn tại" });
@@ -35,11 +69,12 @@ export const signUp = async (req, res) => {
     for (let attempt = 0; attempt < 5; attempt += 1) {
       try {
         createdUser = await User.create({
-          username,
+          username: normalizedUsername,
           hashedPassword,
-          email,
+          email: normalizedEmail,
           displayName: `${lastName} ${firstName}`,
           classroom: `${classroom}`.trim(),
+          role,
           userCode: await createUniqueUserCode(),
         });
         break;
@@ -73,8 +108,10 @@ export const signIn = async (req, res) => {
       return res.status(400).json({ message: "Thiếu username hoặc password." });
     }
 
+    const normalizedUsername = username.trim().toLowerCase();
+
     // lấy hashedPassword trong db để so với password input
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username: normalizedUsername });
 
     if (!user) {
       return res
@@ -91,19 +128,25 @@ export const signIn = async (req, res) => {
         .json({ message: "username hoặc password không chính xác" });
     }
 
+    if (!user.role) {
+      user.role = "user";
+      await user.save();
+    }
+
     await User.updateOne(
       { _id: user._id },
       {
         $set: {
           "preferences.rememberLogin": Boolean(remember),
-          "preferences.lastLoginUsername": username.trim().toLowerCase(),
+          "preferences.lastLoginUsername": normalizedUsername,
+          lastActiveAt: new Date(),
         },
       }
     );
 
     // nếu khớp, tạo accessToken với JWT
     const accessToken = jwt.sign(
-      { userId: user._id },
+      { userId: user._id, role: user.role },
       // @ts-ignore
       process.env.ACCESS_TOKEN_SECRET,
       { expiresIn: ACCESS_TOKEN_TTL }
@@ -138,7 +181,7 @@ export const signIn = async (req, res) => {
       .json({
         message: `User ${user.displayName} đã logged in!`,
         accessToken,
-        rememberedUsername: remember ? username.trim().toLowerCase() : "",
+        rememberedUsername: remember ? normalizedUsername : "",
       });
   } catch (error) {
     console.error("Lỗi khi gọi signIn", error);

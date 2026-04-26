@@ -14,7 +14,7 @@ import {
   Save,
   SendHorizontal,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
@@ -27,6 +27,10 @@ const LiteratureExamPage = () => {
   const [essayAnswer, setEssayAnswer] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [, setExitAttemptCount] = useState(0);
+  const exitAttemptCountRef = useRef(0);
+  const exitEventsRef = useRef<string[]>([]);
+  const autoSubmittedRef = useRef(false);
 
   useEffect(() => {
     if (!examId) {
@@ -51,6 +55,10 @@ const LiteratureExamPage = () => {
 
         setExam(examDetail);
         setTimeLeft(examDetail.durationMinutes * 60);
+        setExitAttemptCount(0);
+        exitAttemptCountRef.current = 0;
+        exitEventsRef.current = [];
+        autoSubmittedRef.current = false;
       } catch (error) {
         if (!cancelled) {
           console.error("Lỗi khi lấy đề tự luận", error);
@@ -89,7 +97,14 @@ const LiteratureExamPage = () => {
     Number(readingAnswer.trim().length > 0) + Number(essayAnswer.trim().length > 0);
   const progress = Math.round((completedSections / 2) * 100);
 
-  const handleSubmitExam = async () => {
+  const handleSubmitExam = async (
+    antiCheatOverride?: {
+      suspiciousExitCount: number;
+      autoSubmittedForCheating: boolean;
+      flaggedForReview: boolean;
+      events: string[];
+    }
+  ) => {
     try {
       setIsSubmitting(true);
       const timeSpentSeconds = exam.durationMinutes * 60 - timeLeft;
@@ -101,6 +116,13 @@ const LiteratureExamPage = () => {
         correctCount: 0,
         wrongCount: 0,
         timeSpentSeconds,
+        antiCheat:
+          antiCheatOverride ?? {
+            suspiciousExitCount: exitAttemptCountRef.current,
+            autoSubmittedForCheating: false,
+            flaggedForReview: exitAttemptCountRef.current >= 3,
+            events: exitEventsRef.current,
+          },
       });
 
       if (submission.todayProgress) {
@@ -127,7 +149,17 @@ const LiteratureExamPage = () => {
               <div className="flex min-w-0 items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => navigate(`/practice/${exam.subjectSlug}`)}
+                  onClick={() => {
+                    if (
+                      !window.confirm(
+                        "Bạn có chắc muốn rời khỏi bài thi? Tiến trình hiện tại có thể bị mất."
+                      )
+                    ) {
+                      return;
+                    }
+
+                    navigate(`/practice/${exam.subjectSlug}`);
+                  }}
                   className="grid size-10 place-items-center rounded-xl text-primary transition hover:bg-primary/10"
                   aria-label="Quay lại danh sách đề"
                 >
@@ -274,6 +306,35 @@ const LiteratureExamPage = () => {
           </main>
         </div>
       </div>
+      {exam ? (
+        <AntiCheatGuard
+          enabled={Boolean(exam && !isSubmitting)}
+          onViolation={(nextCount, nextEvents) => {
+            setExitAttemptCount(nextCount);
+
+            if (nextCount >= 3) {
+              if (autoSubmittedRef.current) {
+                return;
+              }
+
+              autoSubmittedRef.current = true;
+              toast.error("Bạn đã rời app 3 lần. Hệ thống tự động nộp bài và báo admin.");
+              void handleSubmitExam({
+                suspiciousExitCount: nextCount,
+                autoSubmittedForCheating: true,
+                flaggedForReview: true,
+                events: nextEvents,
+              });
+              return;
+            }
+
+            toast.warning(`Cảnh báo gian lận: bạn đã rời app ${nextCount}/3 lần.`);
+          }}
+          exitAttemptCountRef={exitAttemptCountRef}
+          exitEventsRef={exitEventsRef}
+          autoSubmittedRef={autoSubmittedRef}
+        />
+      ) : null}
       <ExamSubmitConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
@@ -282,10 +343,64 @@ const LiteratureExamPage = () => {
         unitLabel="phần"
         remainingLabel="phần chưa hoàn thành"
         isSubmitting={isSubmitting}
-        onConfirm={handleSubmitExam}
+        onConfirm={() => void handleSubmitExam()}
       />
     </>
   );
 };
 
 export default LiteratureExamPage;
+
+function AntiCheatGuard({
+  enabled,
+  onViolation,
+  exitAttemptCountRef,
+  exitEventsRef,
+  autoSubmittedRef,
+}: {
+  enabled: boolean;
+  onViolation: (nextCount: number, nextEvents: string[]) => void;
+  exitAttemptCountRef: MutableRefObject<number>;
+  exitEventsRef: MutableRefObject<string[]>;
+  autoSubmittedRef: MutableRefObject<boolean>;
+}) {
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
+    const registerExitAttempt = (source: string) => {
+      if (document.visibilityState !== "hidden" || autoSubmittedRef.current) {
+        return;
+      }
+
+      const nextCount = exitAttemptCountRef.current + 1;
+      const nextEvents = [...exitEventsRef.current, source];
+
+      exitAttemptCountRef.current = nextCount;
+      exitEventsRef.current = nextEvents;
+      onViolation(nextCount, nextEvents);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        registerExitAttempt("visibility-hidden");
+      }
+    };
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [autoSubmittedRef, enabled, exitAttemptCountRef, exitEventsRef, onViolation]);
+
+  return null;
+}
