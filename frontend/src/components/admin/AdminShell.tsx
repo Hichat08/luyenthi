@@ -12,7 +12,16 @@ import {
 import type { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 
-const adminMenuItems = [
+type AdminMenuItem = {
+  key: string;
+  label: string;
+  description: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  path: string;
+  disabled?: boolean;
+};
+
+const adminMenuItems: AdminMenuItem[] = [
   {
     key: "dashboard",
     label: "Tổng quan",
@@ -57,7 +66,7 @@ const adminMenuItems = [
     path: "/admin/settings",
     disabled: true,
   },
-] as const;
+];
 
 type AdminShellProps = {
   eyebrow?: string;
@@ -96,7 +105,9 @@ export default function AdminShell({
               <p className="text-[0.95rem] font-black tracking-[-0.04em] text-primary">
                 EduPath Admin
               </p>
-              <p className="text-[12px] text-muted-foreground">Quản trị hệ thống học tập</p>
+              <p className="text-[12px] text-muted-foreground">
+                Quản trị hệ thống học tập
+              </p>
             </div>
           </div>
 
@@ -127,14 +138,18 @@ export default function AdminShell({
                   >
                     <div
                       className={`flex size-10 shrink-0 items-center justify-center rounded-[1.1rem] ${
-                        active ? "bg-primary/12 text-primary" : "bg-muted/55 text-muted-foreground"
+                        active
+                          ? "bg-primary/12 text-primary"
+                          : "bg-muted/55 text-muted-foreground"
                       }`}
                     >
                       <Icon className="size-[18px]" strokeWidth={2} />
                     </div>
                     <div className="min-w-0">
                       <p className="text-[13px] font-bold">{item.label}</p>
-                      <p className="text-xs text-muted-foreground/78">{item.description}</p>
+                      <p className="text-xs text-muted-foreground/78">
+                        {item.description}
+                      </p>
                     </div>
                   </button>
                 );
@@ -146,8 +161,12 @@ export default function AdminShell({
             <p className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground/78">
               Phiên hiện tại
             </p>
-            <p className="mt-1.5 text-[0.92rem] font-bold">{user?.displayName}</p>
-            <p className="text-[12px] text-muted-foreground">@{user?.username}</p>
+            <p className="mt-1.5 text-[0.92rem] font-bold">
+              {user?.displayName}
+            </p>
+            <p className="text-[12px] text-muted-foreground">
+              @{user?.username}
+            </p>
             <button
               type="button"
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-[0.95rem] border border-primary/16 bg-background px-4 py-2.5 text-[12px] font-bold text-primary transition hover:bg-primary/8"
@@ -178,7 +197,9 @@ export default function AdminShell({
                   <p className="text-[10px] uppercase tracking-[0.18em] text-primary/68">
                     Đăng nhập với
                   </p>
-                  <p className="mt-1 text-[13px] font-bold">{user?.displayName}</p>
+                  <p className="mt-1 text-[13px] font-bold">
+                    {user?.displayName}
+                  </p>
                 </div>
               )}
             </div>
