@@ -33,7 +33,7 @@ const getNormalizedId = (value: unknown): string => {
 
 const normalizeIncomingMessage = (
   message: Message,
-  currentUserId?: string | null
+  currentUserId?: string | null,
 ): Message => {
   const senderId = getNormalizedId(message.senderId);
   const senderFromSenderId =
@@ -92,14 +92,18 @@ const mergeUniqueMessages = (...lists: Message[][]): Message[] => {
 
 const sortConversationsByLatest = (conversations: Conversation[]) =>
   [...conversations].sort((a, b) => {
-    const aTime = new Date(a.lastMessageAt ?? a.updatedAt ?? a.createdAt).getTime();
-    const bTime = new Date(b.lastMessageAt ?? b.updatedAt ?? b.createdAt).getTime();
+    const aTime = new Date(
+      a.lastMessageAt ?? a.updatedAt ?? a.createdAt,
+    ).getTime();
+    const bTime = new Date(
+      b.lastMessageAt ?? b.updatedAt ?? b.createdAt,
+    ).getTime();
 
     return bTime - aTime;
   });
 
 const isCompleteConversation = (
-  conversation: Partial<Conversation>
+  conversation: Partial<Conversation>,
 ): conversation is Conversation =>
   Array.isArray(conversation.participants) &&
   typeof conversation.type === "string" &&
@@ -111,7 +115,7 @@ const isCompleteConversation = (
 
 const getChatUnreadCount = (
   conversations: Conversation[],
-  currentUserId?: string | null
+  currentUserId?: string | null,
 ) => {
   if (!currentUserId) {
     return 0;
@@ -190,17 +194,22 @@ export const useChatStore = create<ChatState>()(
             const { user } = useAuthStore.getState();
 
             set((state) => {
-              const exists = state.conversations.some((c) => c._id === conversation._id);
+              const exists = state.conversations.some(
+                (c) => c._id === conversation._id,
+              );
               const nextConversations = exists
                 ? state.conversations.map((c) =>
-                    c._id === conversation._id ? conversation : c
+                    c._id === conversation._id ? conversation : c,
                   )
                 : [conversation, ...state.conversations];
 
               return {
                 conversations: nextConversations,
                 activeConversationId: conversation._id,
-                chatUnreadCount: getChatUnreadCount(nextConversations, user?._id),
+                chatUnreadCount: getChatUnreadCount(
+                  nextConversations,
+                  user?._id,
+                ),
                 convoLoading: false,
               };
             });
@@ -246,13 +255,11 @@ export const useChatStore = create<ChatState>()(
           set({ messageLoading: true });
 
           try {
-            const { messages: fetched, cursor } = await chatService.fetchMessages(
-              convoId,
-              nextCursor
-            );
+            const { messages: fetched, cursor } =
+              await chatService.fetchMessages(convoId, nextCursor);
 
             const processed = fetched.map((message) =>
-              normalizeIncomingMessage(message, user?._id)
+              normalizeIncomingMessage(message, user?._id),
             );
 
             set((state) => {
@@ -290,11 +297,11 @@ export const useChatStore = create<ChatState>()(
             recipientId,
             content,
             imgUrl,
-            activeConversationId || undefined
+            activeConversationId || undefined,
           );
           set((state) => ({
             conversations: state.conversations.map((c) =>
-              c._id === activeConversationId ? { ...c, seenBy: [] } : c
+              c._id === activeConversationId ? { ...c, seenBy: [] } : c,
             ),
           }));
         } catch (error) {
@@ -306,7 +313,7 @@ export const useChatStore = create<ChatState>()(
           await chatService.sendGroupMessage(conversationId, content, imgUrl);
           set((state) => ({
             conversations: state.conversations.map((c) =>
-              c._id === get().activeConversationId ? { ...c, seenBy: [] } : c
+              c._id === get().activeConversationId ? { ...c, seenBy: [] } : c,
             ),
           }));
         } catch (error) {
@@ -318,7 +325,7 @@ export const useChatStore = create<ChatState>()(
           await chatService.sendCommunityMessage(content);
           set((state) => ({
             conversations: state.conversations.map((c) =>
-              c._id === get().activeConversationId ? { ...c, seenBy: [] } : c
+              c._id === get().activeConversationId ? { ...c, seenBy: [] } : c,
             ),
           }));
         } catch (error) {
@@ -328,7 +335,10 @@ export const useChatStore = create<ChatState>()(
       addMessage: async (message) => {
         try {
           const { user } = useAuthStore.getState();
-          const normalizedMessage = normalizeIncomingMessage(message, user?._id);
+          const normalizedMessage = normalizeIncomingMessage(
+            message,
+            user?._id,
+          );
           const convoId = normalizedMessage.conversationId;
 
           if (!convoId) {
@@ -349,7 +359,9 @@ export const useChatStore = create<ChatState>()(
                 [convoId]: {
                   items: mergeUniqueMessages(prevItems, [normalizedMessage]),
                   hasMore: currentBucket?.hasMore ?? true,
-                  nextCursor: currentBucket ? (currentBucket.nextCursor ?? null) : "",
+                  nextCursor: currentBucket
+                    ? (currentBucket.nextCursor ?? null)
+                    : "",
                   hydrated: currentBucket?.hydrated ?? false,
                 },
               },
@@ -359,7 +371,9 @@ export const useChatStore = create<ChatState>()(
           console.error("Lỗi xảy khi ra add message:", error);
         }
       },
-      updateConversation: (conversation: Partial<Conversation> & Pick<Conversation, "_id">) => {
+      updateConversation: (
+        conversation: Partial<Conversation> & Pick<Conversation, "_id">,
+      ) => {
         set((state) => {
           const { user } = useAuthStore.getState();
           const normalizedConversationId = getNormalizedId(conversation._id);
@@ -374,20 +388,24 @@ export const useChatStore = create<ChatState>()(
           };
 
           const existingIndex = state.conversations.findIndex(
-            (c) => getNormalizedId(c._id) === normalizedConversationId
+            (c) => getNormalizedId(c._id) === normalizedConversationId,
           );
 
           if (existingIndex >= 0) {
             const updatedConversations = state.conversations.map((c) =>
               getNormalizedId(c._id) === normalizedConversationId
                 ? { ...c, ...normalizedConversation }
-                : c
+                : c,
             );
-            const sortedConversations = sortConversationsByLatest(updatedConversations);
+            const sortedConversations =
+              sortConversationsByLatest(updatedConversations);
 
             return {
               conversations: sortedConversations,
-              chatUnreadCount: getChatUnreadCount(sortedConversations, user?._id),
+              chatUnreadCount: getChatUnreadCount(
+                sortedConversations,
+                user?._id,
+              ),
             };
           }
 
@@ -416,7 +434,9 @@ export const useChatStore = create<ChatState>()(
             return;
           }
 
-          const convo = conversations.find((c) => c._id === activeConversationId);
+          const convo = conversations.find(
+            (c) => c._id === activeConversationId,
+          );
 
           if (!convo) {
             return;
@@ -434,10 +454,12 @@ export const useChatStore = create<ChatState>()(
           seenRequestLocks.add(activeConversationId);
           const result = await chatService.markAsSeen(
             activeConversationId,
-            convo.lastMessage?._id ?? null
+            convo.lastMessage?._id ?? null,
           );
           const nextUnreadCount =
-            typeof result?.myUnreadCount === "number" ? result.myUnreadCount : 0;
+            typeof result?.myUnreadCount === "number"
+              ? result.myUnreadCount
+              : 0;
 
           set((state) => {
             const nextConversations = state.conversations.map((c) =>
@@ -449,7 +471,7 @@ export const useChatStore = create<ChatState>()(
                       [user._id]: nextUnreadCount,
                     },
                   }
-                : c
+                : c,
             );
 
             return {
@@ -468,14 +490,15 @@ export const useChatStore = create<ChatState>()(
       addConvo: (convo) => {
         set((state) => {
           const { user } = useAuthStore.getState();
-          const exists = state.conversations.some(
-            (c) => c._id.toString() === convo._id.toString()
-          );
+          const convoId = convo._id?.toString();
+          const exists = convoId
+            ? state.conversations.some((c) => c._id?.toString() === convoId)
+            : false;
           const nextConversations = exists
             ? sortConversationsByLatest(
                 state.conversations.map((c) =>
-                  c._id.toString() === convo._id.toString() ? { ...c, ...convo } : c
-                )
+                  c._id?.toString() === convoId ? { ...c, ...convo } : c,
+                ),
               )
             : sortConversationsByLatest([convo, ...state.conversations]);
 
@@ -492,7 +515,7 @@ export const useChatStore = create<ChatState>()(
           const conversation = await chatService.createConversation(
             type,
             name,
-            memberIds
+            memberIds,
           );
 
           get().addConvo(conversation);
@@ -502,7 +525,10 @@ export const useChatStore = create<ChatState>()(
             .getState()
             .socket?.emit("join-conversation", conversation._id);
         } catch (error) {
-          console.error("Lỗi xảy ra khi gọi createConversation trong store", error);
+          console.error(
+            "Lỗi xảy ra khi gọi createConversation trong store",
+            error,
+          );
         } finally {
           set({ loading: false });
         }
@@ -511,6 +537,6 @@ export const useChatStore = create<ChatState>()(
     {
       name: "chat-storage",
       partialize: (state) => ({ conversations: state.conversations }),
-    }
-  )
+    },
+  ),
 );

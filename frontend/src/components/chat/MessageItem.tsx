@@ -40,13 +40,17 @@ const MessageItem = ({
   const isGroupBreak = isShowTime || message.senderId !== prev?.senderId;
 
   const participant = selectedConvo.participants.find(
-    (p: Participant) => p._id.toString() === message.senderId.toString()
+    (p: Participant) =>
+      !!p._id &&
+      !!message.senderId &&
+      p._id.toString() === message.senderId.toString(),
   );
   const author = message.sender ?? participant ?? null;
   const communityExam = parseCommunityExamMessage(message.content);
   const communityExamResult = parseCommunityExamResultMessage(message.content);
-  const classroomLabel =
-    author?.classroom?.trim() ? `Lớp ${author.classroom.trim()}` : null;
+  const classroomLabel = author?.classroom?.trim()
+    ? `Lớp ${author.classroom.trim()}`
+    : null;
   const navigate = useNavigate();
   const [openingExam, setOpeningExam] = useState(false);
 
@@ -57,8 +61,12 @@ const MessageItem = ({
 
     try {
       setOpeningExam(true);
-      const exams = await examService.getExams({ subjectSlug: communityExam.subjectSlug });
-      const firstExam = exams.find((item) => item.examType === "multiple_choice");
+      const exams = await examService.getExams({
+        subjectSlug: communityExam.subjectSlug,
+      });
+      const firstExam = exams.find(
+        (item) => item.examType === "multiple_choice",
+      );
 
       if (!firstExam) {
         throw new Error("Không tìm thấy đề phù hợp.");
@@ -66,16 +74,19 @@ const MessageItem = ({
 
       const examDetail = await examService.getExamDetail(firstExam.examId);
 
-      navigate(`/practice/${communityExam.subjectSlug}/exam/${firstExam.examId}`, {
-        state: {
-          selectedTopicLabels: communityExam.selectedTopicLabels,
-          questionLimit: communityExam.questionLimit,
-          durationMinutes: communityExam.durationMinutes,
-          autoStart: true,
-          launchSource: "community",
-          initialExamDetail: examDetail,
+      navigate(
+        `/practice/${communityExam.subjectSlug}/exam/${firstExam.examId}`,
+        {
+          state: {
+            selectedTopicLabels: communityExam.selectedTopicLabels,
+            questionLimit: communityExam.questionLimit,
+            durationMinutes: communityExam.durationMinutes,
+            autoStart: true,
+            launchSource: "community",
+            initialExamDetail: examDetail,
+          },
         },
-      });
+      );
     } catch (error) {
       console.error("Lỗi khi mở đề cộng đồng", error);
       toast.error("Không thể mở đề cộng đồng.");
@@ -96,7 +107,7 @@ const MessageItem = ({
       <div
         className={cn(
           "flex gap-2 message-bounce mt-1",
-          message.isOwn ? "justify-end" : "justify-start"
+          message.isOwn ? "justify-end" : "justify-start",
         )}
       >
         {/* avatar */}
@@ -116,7 +127,7 @@ const MessageItem = ({
         <div
           className={cn(
             "max-w-xs lg:max-w-md space-y-1 flex flex-col",
-            message.isOwn ? "items-end" : "items-start"
+            message.isOwn ? "items-end" : "items-start",
           )}
         >
           {!message.isOwn && isGroupBreak && author?.displayName ? (
@@ -130,7 +141,7 @@ const MessageItem = ({
                 "w-full max-w-sm border p-4 shadow-[0_18px_40px_-30px_hsl(var(--foreground)/0.35)]",
                 message.isOwn
                   ? "border-primary/20 bg-[linear-gradient(180deg,hsl(var(--primary)/0.12)_0%,hsl(var(--background))_100%)]"
-                  : "border-primary/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,hsl(var(--primary)/0.08)_100%)]"
+                  : "border-primary/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,hsl(var(--primary)/0.08)_100%)]",
               )}
             >
               <div className="space-y-3">
@@ -146,7 +157,8 @@ const MessageItem = ({
                       {communityExam.subjectName}
                     </h3>
                     <p className="mt-1 text-sm leading-6 text-foreground/80">
-                      Bộ đề do thành viên cộng đồng chia sẻ để cùng luyện ngay trong phòng chat.
+                      Bộ đề do thành viên cộng đồng chia sẻ để cùng luyện ngay
+                      trong phòng chat.
                     </p>
                   </div>
                 </div>
@@ -182,7 +194,7 @@ const MessageItem = ({
                 "w-full max-w-sm overflow-hidden border p-0 shadow-[0_18px_40px_-30px_hsl(var(--foreground)/0.35)]",
                 message.isOwn
                   ? "border-primary/20 bg-[linear-gradient(180deg,hsl(var(--primary)/0.12)_0%,hsl(var(--background))_100%)]"
-                  : "border-amber-200/80 bg-[linear-gradient(180deg,rgba(255,248,229,0.95)_0%,hsl(var(--background))_100%)]"
+                  : "border-amber-200/80 bg-[linear-gradient(180deg,rgba(255,248,229,0.95)_0%,hsl(var(--background))_100%)]",
               )}
             >
               <div className="border-b border-black/5 px-4 py-3">
@@ -192,7 +204,7 @@ const MessageItem = ({
                       "flex size-10 shrink-0 items-center justify-center rounded-2xl shadow-sm",
                       message.isOwn
                         ? "bg-primary text-primary-foreground"
-                        : "bg-amber-400 text-amber-950"
+                        : "bg-amber-400 text-amber-950",
                     )}
                   >
                     <Trophy className="size-5" />
@@ -205,7 +217,8 @@ const MessageItem = ({
                       {communityExamResult.examTitle}
                     </h3>
                     <p className="mt-1 text-sm leading-5 text-muted-foreground">
-                      {communityExamResult.displayName} đã hoàn thành bài luyện và chia sẻ kết quả trong phòng chat.
+                      {communityExamResult.displayName} đã hoàn thành bài luyện
+                      và chia sẻ kết quả trong phòng chat.
                     </p>
                     {classroomLabel ? (
                       <p className="mt-2 inline-flex rounded-full bg-primary/8 px-2.5 py-1 text-[0.72rem] font-bold text-primary">
@@ -230,7 +243,8 @@ const MessageItem = ({
                     Chính xác
                   </p>
                   <p className="mt-1 text-base font-black text-foreground">
-                    {communityExamResult.correctCount}/{communityExamResult.totalQuestions}
+                    {communityExamResult.correctCount}/
+                    {communityExamResult.totalQuestions}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-background/80 px-3 py-2 text-center">
@@ -250,21 +264,27 @@ const MessageItem = ({
                     ? `${Math.round(
                         (communityExamResult.correctCount /
                           communityExamResult.totalQuestions) *
-                          100
+                          100,
                       )}% câu đúng`
                     : "Chưa có dữ liệu"}
                 </span>
-                <span className="font-black text-primary/80">Thành tích mới</span>
+                <span className="font-black text-primary/80">
+                  Thành tích mới
+                </span>
               </div>
             </Card>
           ) : (
             <Card
               className={cn(
                 "p-3",
-                message.isOwn ? "chat-bubble-sent border-0" : "chat-bubble-received"
+                message.isOwn
+                  ? "chat-bubble-sent border-0"
+                  : "chat-bubble-received",
               )}
             >
-              <p className="text-sm leading-relaxed break-words">{message.content}</p>
+              <p className="text-sm leading-relaxed break-words">
+                {message.content}
+              </p>
             </Card>
           )}
 
@@ -276,7 +296,7 @@ const MessageItem = ({
                 "text-xs px-1.5 py-0.5 h-4 border-0",
                 lastMessageStatus === "seen"
                   ? "bg-primary/20 text-primary"
-                  : "bg-muted text-muted-foreground"
+                  : "bg-muted text-muted-foreground",
               )}
             >
               {lastMessageStatus === "seen" ? "Đã xem" : "Đã gửi"}
