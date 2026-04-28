@@ -37,7 +37,7 @@ export function SigninForm() {
   });
 
   const remember = watch("remember");
-  const googleButtonRef = useRef<HTMLDivElement | null>(null);
+  const googleInitialized = useRef(false);
 
   const handleGoogleSignIn = useCallback(
     async (response: { credential?: string }) => {
@@ -56,6 +56,21 @@ export function SigninForm() {
     },
     [navigate, signInWithGoogle],
   );
+
+  const handleGoogleButtonClick = () => {
+    if (!googleInitialized.current) {
+      toast.error("Google chưa sẵn sàng, hãy thử lại sau.");
+      return;
+    }
+
+    const google = (window as any).google;
+    if (!google?.accounts?.id) {
+      toast.error("Google chưa sẵn sàng, hãy thử lại sau.");
+      return;
+    }
+
+    google.accounts.id.prompt();
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem(REMEMBER_SIGNIN_KEY);
@@ -99,16 +114,9 @@ export function SigninForm() {
         client_id: googleClientId,
         callback: handleGoogleSignIn,
         ux_mode: "popup",
+        auto_select: false,
       });
-
-      if (googleButtonRef.current) {
-        google.accounts.id.renderButton(googleButtonRef.current, {
-          type: "standard",
-          theme: "outline",
-          size: "large",
-          width: "100%",
-        });
-      }
+      googleInitialized.current = true;
     };
 
     document.body.appendChild(script);
@@ -255,11 +263,40 @@ export function SigninForm() {
               <span className="text-sm text-foreground/70">
                 Hoặc đăng nhập bằng
               </span>
-              <div
-                id="google-signin-button-container"
-                className="w-full max-w-[28rem]"
-                ref={googleButtonRef}
-              />
+              <Button
+                type="button"
+                variant="secondary"
+                className="group h-14 w-full max-w-[28rem] rounded-[1.25rem] border border-border/70 bg-background/85 px-4 font-auth-body text-base font-semibold text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/35 hover:bg-background dark:bg-muted/30 sm:h-16 sm:text-lg"
+                onClick={handleGoogleButtonClick}
+              >
+                <span className="inline-flex items-center justify-center gap-2">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm">
+                    <svg
+                      viewBox="0 0 46 46"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                    >
+                      <path
+                        d="M23 9.5c3.9 0 7 1.5 9.1 3.6l6.6-6.6C34.6 2.5 29.1 0 23 0 14.5 0 7.1 4.9 3.2 12.1l7.7 6c1.6-4.7 6-8.6 12.1-8.6z"
+                        fill="#EA4335"
+                      />
+                      <path
+                        d="M45.9 23.5c0-1.6-.1-3.1-.4-4.5H23v8.5h12.5c-.5 2.8-2.1 5.2-4.5 6.8l7 5.4c4.1-3.8 6.5-9.4 6.5-16.2z"
+                        fill="#4285F4"
+                      />
+                      <path
+                        d="M12.8 27.8c-.7-2.1-1-4.3-1-6.6s.4-4.5 1-6.6l-7.7-6C2.4 14.2 1 18.5 1 23.5s1.4 9.3 4.1 13.9l7.7-6.6z"
+                        fill="#FBBC05"
+                      />
+                      <path
+                        d="M23 46c6.1 0 11.6-2 15.9-5.4l-7-5.4c-2.2 1.5-4.9 2.4-8.9 2.4-6.1 0-10.5-3.9-12.1-8.6l-7.7 6c3.9 7.2 11.3 12.1 19.8 12.1z"
+                        fill="#34A853"
+                      />
+                    </svg>
+                  </span>
+                  Đăng nhập bằng Google
+                </span>
+              </Button>
             </div>
           </form>
 
