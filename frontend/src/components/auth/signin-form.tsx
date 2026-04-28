@@ -6,7 +6,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { Link, useNavigate } from "react-router";
 import { AuthInputField } from "./auth-field";
 import { GraduationCap, Lock, UserRound } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 const REMEMBER_SIGNIN_KEY = "remembered-signin";
@@ -38,6 +38,24 @@ export function SigninForm() {
 
   const remember = watch("remember");
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
+
+  const handleGoogleSignIn = useCallback(
+    async (response: { credential?: string }) => {
+      const token = response?.credential;
+      if (!token) {
+        toast.error("Đăng nhập Google không thành công.");
+        return;
+      }
+
+      const success = await signInWithGoogle(token);
+
+      if (success) {
+        const role = useAuthStore.getState().user?.role;
+        navigate(role === "admin" ? "/admin" : "/home");
+      }
+    },
+    [navigate, signInWithGoogle],
+  );
 
   useEffect(() => {
     const saved = localStorage.getItem(REMEMBER_SIGNIN_KEY);
@@ -98,7 +116,7 @@ export function SigninForm() {
     return () => {
       document.body.removeChild(script);
     };
-  }, []);
+  }, [handleGoogleSignIn]);
 
   useEffect(() => {
     if (remember) {
@@ -132,21 +150,6 @@ export function SigninForm() {
       await navigator.credentials.store(credential);
     } catch (error) {
       console.error("Không thể lưu credential cho trình duyệt:", error);
-    }
-  };
-
-  const handleGoogleSignIn = async (response: { credential?: string }) => {
-    const token = response?.credential;
-    if (!token) {
-      toast.error("Đăng nhập Google không thành công.");
-      return;
-    }
-
-    const success = await signInWithGoogle(token);
-
-    if (success) {
-      const role = useAuthStore.getState().user?.role;
-      navigate(role === "admin" ? "/admin" : "/home");
     }
   };
 
@@ -248,11 +251,11 @@ export function SigninForm() {
               Đăng nhập
             </Button>
 
-            <div className="mt-4 flex flex-col gap-3 text-center">
+            <div className="mt-4 flex flex-col items-center gap-3 text-center">
               <span className="text-sm text-foreground/70">
                 Hoặc đăng nhập bằng
               </span>
-              <div ref={googleButtonRef} />
+              <div className="w-full max-w-[28rem]" ref={googleButtonRef} />
             </div>
           </form>
 
