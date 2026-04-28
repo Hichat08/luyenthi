@@ -20,13 +20,28 @@ import { v2 as cloudinary } from "cloudinary";
 
 dotenv.config();
 
-// const app = express();
 const PORT = process.env.PORT || 5001;
+const allowedOrigins = (process.env.CLIENT_URL ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+};
 
 // middlewares
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(cors(corsOptions));
 
 // CLOUDINARY Configuration
 cloudinary.config({
@@ -36,7 +51,9 @@ cloudinary.config({
 });
 
 // swagger
-const swaggerDocument = JSON.parse(fs.readFileSync("./src/swagger.json", "utf8"));
+const swaggerDocument = JSON.parse(
+  fs.readFileSync("./src/swagger.json", "utf8"),
+);
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
@@ -61,6 +78,9 @@ connectDB()
     });
   })
   .catch((error) => {
-    console.error("Không thể khởi động server vì lỗi kết nối CSDL:", error.message);
+    console.error(
+      "Không thể khởi động server vì lỗi kết nối CSDL:",
+      error.message,
+    );
     process.exit(1);
   });

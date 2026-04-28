@@ -7,7 +7,11 @@ import { useChatStore } from "./useChatStore";
 import { useNotificationStore } from "./useNotificationStore";
 
 const REMEMBER_SIGNIN_KEY = "remembered-signin";
-const AUTH_STORAGE_KEYS = ["auth-storage", "chat-storage", "notification-storage"];
+const AUTH_STORAGE_KEYS = [
+  "auth-storage",
+  "chat-storage",
+  "notification-storage",
+];
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -31,7 +35,14 @@ export const useAuthStore = create<AuthState>()(
           sessionStorage.removeItem(key);
         });
       },
-      signUp: async (username, password, email, firstName, lastName, classroom) => {
+      signUp: async (
+        username,
+        password,
+        email,
+        firstName,
+        lastName,
+        classroom,
+      ) => {
         try {
           set({ loading: true });
 
@@ -42,11 +53,11 @@ export const useAuthStore = create<AuthState>()(
             email,
             firstName,
             lastName,
-            classroom
+            classroom,
           );
 
           toast.success(
-            "Đăng ký thành công! Bạn sẽ được chuyển sang trang đăng nhập."
+            "Đăng ký thành công! Bạn sẽ được chuyển sang trang đăng nhập.",
           );
           return true;
         } catch (error) {
@@ -65,7 +76,7 @@ export const useAuthStore = create<AuthState>()(
           const { accessToken, rememberedUsername } = await authService.signIn(
             username,
             password,
-            remember
+            remember,
           );
 
           if (remember && rememberedUsername) {
@@ -74,7 +85,7 @@ export const useAuthStore = create<AuthState>()(
               JSON.stringify({
                 username: rememberedUsername,
                 remember: true,
-              })
+              }),
             );
           } else {
             localStorage.removeItem(REMEMBER_SIGNIN_KEY);
@@ -90,6 +101,30 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error(error);
           toast.error("Đăng nhập không thành công!");
+          return false;
+        } finally {
+          set({ loading: false });
+        }
+      },
+      signInWithGoogle: async (idToken, remember = true) => {
+        try {
+          get().clearState();
+          set({ loading: true });
+
+          const { accessToken } = await authService.signInWithGoogle(
+            idToken,
+            remember,
+          );
+
+          get().setAccessToken(accessToken);
+          await get().fetchMe();
+          await useChatStore.getState().fetchConversations();
+
+          toast.success("Đăng nhập Google thành công! Chào mừng bạn.");
+          return true;
+        } catch (error) {
+          console.error(error);
+          toast.error("Đăng nhập Google không thành công!");
           return false;
         } finally {
           set({ loading: false });
@@ -162,6 +197,6 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "auth-storage",
       partialize: (state) => ({ user: state.user }), // chỉ persist user
-    }
-  )
+    },
+  ),
 );

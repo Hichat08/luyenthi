@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router";
 import { AuthInputField } from "./auth-field";
 import { GraduationCap, Lock, UserRound } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 const REMEMBER_SIGNIN_KEY = "remembered-signin";
 
@@ -19,7 +20,7 @@ const signInSchema = z.object({
 type SignInFormValues = z.infer<typeof signInSchema>;
 
 export function SigninForm() {
-  const { signIn } = useAuthStore();
+  const { signIn, signInWithGoogle } = useAuthStore();
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
   const {
@@ -36,6 +37,7 @@ export function SigninForm() {
   });
 
   const remember = watch("remember");
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(REMEMBER_SIGNIN_KEY);
@@ -58,6 +60,47 @@ export function SigninForm() {
   }, [setValue]);
 
   useEffect(() => {
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!googleClientId) {
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+
+    script.onload = () => {
+      const google = (window as any).google;
+
+      if (!google?.accounts?.id) {
+        return;
+      }
+
+      google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: handleGoogleSignIn,
+        ux_mode: "popup",
+      });
+
+      if (googleButtonRef.current) {
+        google.accounts.id.renderButton(googleButtonRef.current, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          width: "100%",
+        });
+      }
+    };
+
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  useEffect(() => {
     if (remember) {
       return;
     }
@@ -66,16 +109,18 @@ export function SigninForm() {
   }, [remember]);
 
   const storeBrowserCredential = async () => {
-    if (!formRef.current || !("PasswordCredential" in window) || !navigator.credentials) {
+    if (
+      !formRef.current ||
+      !("PasswordCredential" in window) ||
+      !navigator.credentials
+    ) {
       return;
     }
 
     try {
       const PasswordCredentialCtor = (
         window as Window & {
-          PasswordCredential?: new (
-            form: HTMLFormElement
-          ) => any;
+          PasswordCredential?: new (form: HTMLFormElement) => any;
         }
       ).PasswordCredential;
 
@@ -87,6 +132,21 @@ export function SigninForm() {
       await navigator.credentials.store(credential);
     } catch (error) {
       console.error("Không thể lưu credential cho trình duyệt:", error);
+    }
+  };
+
+  const handleGoogleSignIn = async (response: { credential?: string }) => {
+    const token = response?.credential;
+    if (!token) {
+      toast.error("Đăng nhập Google không thành công.");
+      return;
+    }
+
+    const success = await signInWithGoogle(token);
+
+    if (success) {
+      const role = useAuthStore.getState().user?.role;
+      navigate(role === "admin" ? "/admin" : "/home");
     }
   };
 
@@ -187,6 +247,13 @@ export function SigninForm() {
             >
               Đăng nhập
             </Button>
+
+            <div className="mt-4 flex flex-col gap-3 text-center">
+              <span className="text-sm text-foreground/70">
+                Hoặc đăng nhập bằng
+              </span>
+              <div ref={googleButtonRef} />
+            </div>
           </form>
 
           <div className="pt-7 text-center sm:pt-8">
@@ -204,24 +271,15 @@ export function SigninForm() {
       </section>
 
       <div className="mt-6 flex items-center justify-center gap-3 sm:mt-8 sm:gap-6">
-        <button
-          type="button"
-          className="auth-support-link"
-        >
+        <button type="button" className="auth-support-link">
           Hỗ trợ
         </button>
         <span className="text-muted-foreground/35">•</span>
-        <button
-          type="button"
-          className="auth-support-link"
-        >
+        <button type="button" className="auth-support-link">
           Điều khoản
         </button>
         <span className="text-muted-foreground/35">•</span>
-        <button
-          type="button"
-          className="auth-support-link"
-        >
+        <button type="button" className="auth-support-link">
           Bảo mật
         </button>
       </div>

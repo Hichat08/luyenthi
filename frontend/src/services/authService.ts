@@ -7,12 +7,12 @@ export const authService = {
     email: string,
     firstName: string,
     lastName: string,
-    classroom: string
+    classroom: string,
   ) => {
     const res = await api.post(
       "/auth/signup",
       { username, password, email, firstName, lastName, classroom },
-      { withCredentials: true }
+      { withCredentials: true },
     );
 
     return res.data;
@@ -20,14 +20,23 @@ export const authService = {
 
   signIn: async (username: string, password: string, remember = true) => {
     const res = await api.post(
-      "auth/signin",
+      "/auth/signin",
       { username, password, remember },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return res.data as {
       accessToken: string;
       rememberedUsername?: string;
     };
+  },
+
+  signInWithGoogle: async (idToken: string, remember = true) => {
+    const res = await api.post(
+      "/auth/google",
+      { idToken, remember },
+      { withCredentials: true },
+    );
+    return res.data as { accessToken: string };
   },
 
   signOut: async () => {

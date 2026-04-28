@@ -16,9 +16,14 @@ export interface AuthState {
     email: string,
     firstName: string,
     lastName: string,
-    classroom: string
+    classroom: string,
   ) => Promise<boolean>;
-  signIn: (username: string, password: string, remember?: boolean) => Promise<boolean>;
+  signIn: (
+    username: string,
+    password: string,
+    remember?: boolean,
+  ) => Promise<boolean>;
+  signInWithGoogle: (idToken: string, remember?: boolean) => Promise<boolean>;
   signOut: () => Promise<void>;
   fetchMe: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -57,25 +62,25 @@ export interface ChatState {
   sendDirectMessage: (
     recipientId: string,
     content: string,
-    imgUrl?: string
+    imgUrl?: string,
   ) => Promise<void>;
   sendGroupMessage: (
     conversationId: string,
     content: string,
-    imgUrl?: string
+    imgUrl?: string,
   ) => Promise<void>;
   // add message
   addMessage: (message: Message) => Promise<void>;
   // update convo
   updateConversation: (
-    conversation: Partial<Conversation> & Pick<Conversation, "_id">
+    conversation: Partial<Conversation> & Pick<Conversation, "_id">,
   ) => void;
   markAsSeen: () => Promise<void>;
   addConvo: (convo: Conversation) => void;
   createConversation: (
     type: "group" | "direct",
     name: string,
-    memberIds: string[]
+    memberIds: string[],
   ) => Promise<void>;
   fetchCommunityConversation: () => Promise<void>;
   sendCommunityMessage: (content: string) => Promise<void>;
