@@ -255,7 +255,11 @@ export function SigninForm() {
               <span className="text-sm text-foreground/70">
                 Hoặc đăng nhập bằng
               </span>
-              <div className="w-full max-w-[28rem]" ref={googleButtonRef} />
+              <div
+                id="google-signin-button-container"
+                className="w-full max-w-[28rem]"
+                ref={googleButtonRef}
+              />
             </div>
           </form>
 
