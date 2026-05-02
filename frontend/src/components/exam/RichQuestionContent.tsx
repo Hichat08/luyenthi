@@ -5,7 +5,7 @@ type RichQuestionContentProps = {
   className?: string;
 };
 
-export const decodeHtmlEntities = (value: string) =>
+const decodeHtmlEntities = (value: string) =>
   value
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
