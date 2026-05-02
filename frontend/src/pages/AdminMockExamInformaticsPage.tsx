@@ -119,7 +119,7 @@ export default function AdminMockExamInformaticsPage() {
             <div key={gi} className="rounded-xl border p-3 space-y-2">
               <Textarea value={g.prompt} onChange={(e)=>setTfGroups((cur)=>cur.map((x,idx)=>idx===gi?{...x,prompt:e.target.value}:x))} placeholder={`Câu Đ/S ${gi+1} - đoạn dẫn`} />
               {g.statements.map((s, si) => (
-                <div key={si} className="grid grid-cols-[1fr_auto] gap-2 items-center">
+                <div key={si} className="grid gap-2 md:grid-cols-[190px_1fr_auto] items-center">
                   <Input value={s.code} onChange={(e)=>setTfGroups((cur)=>cur.map((x,idx)=>idx===gi?{...x,statements:x.statements.map((st,sti)=>sti===si?{...st,code:e.target.value}:st)}:x))} placeholder={`Mã ý gợi ý TH-DS-${gi+1}${String.fromCharCode(65+si)}`} />
                   <Input value={s.text} onChange={(e)=>setTfGroups((cur)=>cur.map((x,idx)=>idx===gi?{...x,statements:x.statements.map((st,sti)=>sti===si?{...st,text:e.target.value}:st)}:x))} placeholder={`Ý ${String.fromCharCode(97+si)}`} />
                   <div className="flex gap-1">
