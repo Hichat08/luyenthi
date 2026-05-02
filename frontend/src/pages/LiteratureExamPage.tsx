@@ -85,7 +85,7 @@ const LiteratureExamPage = () => {
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [exam]);
+  }, [exam, timeLeft]);
 
   if (!exam || timeLeft === null || !exam.essayContent) {
     return null;

@@ -29,7 +29,7 @@ const FriendRequestDialog = ({ open, setOpen }: FriendRequestDialogProps) => {
     };
 
     loadRequest();
-  }, []);
+  }, [getAllFriendRequests]);
 
   return (
     <Dialog

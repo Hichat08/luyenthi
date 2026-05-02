@@ -29,6 +29,7 @@ type QuestionKind = "multiple_choice" | "true_false";
 
 type QuestionForm = {
   topicLabel: string;
+  questionCode: string;
   prompt: string;
   kind: QuestionKind;
   options: string[];
@@ -70,6 +71,7 @@ const categoryOptions: Array<{ value: ExamCategory; label: string; description: 
 
 const createEmptyQuestion = (kind: QuestionKind = "multiple_choice"): QuestionForm => ({
   topicLabel: "",
+  questionCode: "",
   prompt: "",
   kind,
   options: kind === "true_false" ? ["Đúng", "Sai"] : ["", "", "", ""],
@@ -257,6 +259,7 @@ export default function AdminExamBuilderPage() {
     if (examType === "multiple_choice") {
       payload.questions = questions.map((question) => ({
         topicLabel: normalizeText(question.topicLabel),
+        questionCode: normalizeText(question.questionCode).toUpperCase().replace(/\s+/g, ""),
         prompt: question.prompt.trim(),
         options: (question.kind === "true_false" ? ["Đúng", "Sai"] : question.options)
           .map((option) => option.trim())
@@ -544,6 +547,13 @@ export default function AdminExamBuilderPage() {
                         placeholder="Chủ đề, ví dụ: Hàm số, OOP, Sóng cơ..."
                         className="h-10 rounded-[0.95rem] border-border/75 bg-card text-[13px]"
                       />
+                      <Input
+                        value={question.questionCode}
+                        onChange={(event) => updateQuestion(index, { questionCode: event.target.value })}
+                        placeholder={question.kind === "true_false" ? "Mã gợi ý: TH-DS-01A" : "Mã gợi ý: TH-MC-001"}
+                        className="h-10 rounded-[0.95rem] border-border/75 bg-card text-[13px]"
+                      />
+                      <p className="text-[11px] text-muted-foreground">Gợi ý mã: Trắc nghiệm dùng TH-MC-001, TH-MC-002... | Đúng/Sai dùng TH-DS-01A, TH-DS-01B...</p>
                       <Textarea
                         value={question.prompt}
                         onChange={(event) =>

@@ -26,7 +26,9 @@ const EmojiPicker = ({ onChange, triggerClassName }: EmojiPickerProps) => {
         <Picker
           theme={isDark ? "dark" : "light"}
           data={data}
-          onEmojiSelect={(emoji: any) => onChange(emoji.native)}
+          onEmojiSelect={(emoji: unknown) =>
+            onChange((emoji as { native?: string }).native ?? "")
+          }
           emojiSize={24}
         />
       </PopoverContent>

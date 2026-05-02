@@ -88,6 +88,10 @@ const ExamResultPage = () => {
       return 0;
     }
 
+    if (typeof result.score === "number") {
+      return result.score;
+    }
+
     return calculateExamScore(
       result.correctCount,
       result.totalQuestions,

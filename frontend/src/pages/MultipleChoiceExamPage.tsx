@@ -29,7 +29,7 @@ import {
   Square,
   Tag,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
@@ -81,6 +81,37 @@ const buildInformaticsAttemptExamId = ({
     normalizedTopics || "all-topics",
     Date.now(),
   ].join("__");
+};
+
+const calculateInformaticsMockScore = (
+  questions: ExamQuestion[],
+  answers: Record<number, number>,
+) => {
+  const scoreByTfCorrectCount = [0, 0.1, 0.25, 0.5, 1];
+  let totalScore = 0;
+  let trueFalseBucket: boolean[] = [];
+
+  questions.forEach((question, index) => {
+    const picked = answers[question.id];
+    const isCorrect = picked === question.correctIndex;
+    const isTrueFalse = question.topicLabel?.trim() === "Đúng/Sai";
+
+    if (!isTrueFalse && index < 24) {
+      totalScore += isCorrect ? 0.25 : 0;
+      return;
+    }
+
+    if (isTrueFalse) {
+      trueFalseBucket.push(isCorrect);
+      if (trueFalseBucket.length === 4) {
+        const correctInGroup = trueFalseBucket.filter(Boolean).length;
+        totalScore += scoreByTfCorrectCount[correctInGroup] ?? 0;
+        trueFalseBucket = [];
+      }
+    }
+  });
+
+  return Math.round(totalScore * 100) / 100;
 };
 
 const MultipleChoiceExamPage = () => {
@@ -199,7 +230,7 @@ const MultipleChoiceExamPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [examId, launchState?.durationMinutes, launchState?.questionLimit, launchState?.selectedTopicLabels, navigate, subjectSlug]);
+  }, [examId, launchState?.durationMinutes, launchState?.initialExamDetail, launchState?.questionLimit, launchState?.selectedTopicLabels, navigate, subjectSlug]);
 
   const topicOptions = useMemo(() => {
     if (!exam) {
@@ -246,7 +277,7 @@ const MultipleChoiceExamPage = () => {
     return () => window.clearInterval(timer);
   }, [hasStarted, preparedQuestions.length, timeLeft]);
 
-  const handleSubmitExam = async (
+  const handleSubmitExam = useCallback(async (
     autoSubmit = false,
     antiCheatOverride?: {
       suspiciousExitCount: number;
@@ -268,6 +299,10 @@ const MultipleChoiceExamPage = () => {
         return count + Number(question?.correctIndex === answerIndex);
       }, 0);
       const wrongCount = selectedEntries.length - correctCount;
+      const customScore =
+        exam.subjectSlug === "tin-hoc" && preparedQuestions.length >= 40
+          ? calculateInformaticsMockScore(preparedQuestions, selectedAnswers)
+          : undefined;
       const timeSpentSeconds = durationMinutes * 60 - timeLeft;
       const rankingExamId =
         exam.subjectSlug === "tin-hoc"
@@ -309,6 +344,7 @@ const MultipleChoiceExamPage = () => {
         topicAnalysis: calculateTopicAnalysis(preparedQuestions, selectedAnswers),
         selectedAnswers,
         questions: preparedQuestions,
+        score: customScore,
       };
 
       saveLastExamResult(resultState);
@@ -328,9 +364,10 @@ const MultipleChoiceExamPage = () => {
               correctCount,
               totalQuestions: preparedQuestions.length,
               score:
-                preparedQuestions.length > 0
+                customScore ??
+                (preparedQuestions.length > 0
                   ? (correctCount / preparedQuestions.length) * 10
-                  : 0,
+                  : 0),
               timeSpentSeconds,
             })
           );
@@ -350,7 +387,20 @@ const MultipleChoiceExamPage = () => {
       setIsSubmitting(false);
       setConfirmOpen(false);
     }
-  };
+  }, [
+    attemptExamId,
+    durationMinutes,
+    exam,
+    isSubmitting,
+    launchState?.launchSource,
+    navigate,
+    preparedQuestions,
+    selectedAnswers,
+    selectedTopicLabels,
+    timeLeft,
+    user?.displayName,
+    user?.username,
+  ]);
 
   useEffect(() => {
     if (!hasStarted || timeLeft !== 0) {
@@ -358,7 +408,7 @@ const MultipleChoiceExamPage = () => {
     }
 
     void handleSubmitExam(true);
-  }, [hasStarted, timeLeft]);
+  }, [handleSubmitExam, hasStarted, timeLeft]);
 
   useEffect(() => {
     if (!hasStarted) {
@@ -415,7 +465,7 @@ const MultipleChoiceExamPage = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [hasStarted, isSubmitting]);
+  }, [handleSubmitExam, hasStarted, isSubmitting]);
 
   const handleToggleTopic = (topicLabel: string) => {
     setSelectedTopicLabels((current) =>
@@ -431,7 +481,7 @@ const MultipleChoiceExamPage = () => {
     );
   };
 
-  const handleStartExam = () => {
+  const handleStartExam = useCallback(() => {
     if (!exam) {
       return;
     }
@@ -483,7 +533,7 @@ const MultipleChoiceExamPage = () => {
           })
         : exam.examId
     );
-  };
+  }, [availableQuestions, durationMinutes, exam, questionLimit, selectedTopicLabels]);
 
   useEffect(() => {
     if (!exam || !launchState?.autoStart || hasStarted || selectedTopicLabels.length === 0) {
@@ -491,7 +541,7 @@ const MultipleChoiceExamPage = () => {
     }
 
     handleStartExam();
-  }, [exam, hasStarted, launchState?.autoStart, selectedTopicLabels]);
+  }, [exam, handleStartExam, hasStarted, launchState?.autoStart, selectedTopicLabels]);
 
   if (isLoadingExam) {
     return (

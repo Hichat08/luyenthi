@@ -14,4 +14,5 @@ export type ExamResultState = {
   topicAnalysis: TopicAnalysisItem[];
   selectedAnswers: Record<number, number>;
   questions: ExamQuestion[];
+  score?: number;
 };

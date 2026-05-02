@@ -12,6 +12,12 @@ const examQuestionSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    questionCode: {
+      type: String,
+      trim: true,
+      default: "",
+      index: true,
+    },
     prompt: {
       type: String,
       required: true,

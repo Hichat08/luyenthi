@@ -1,7 +1,7 @@
 import type { UserRole } from "@/types/user";
 import { AppLoadingScreen } from "@/components/auth/AppLoadingScreen";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router";
 
 type ProtectedRouteProps = {
@@ -14,7 +14,7 @@ const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   const { accessToken, loading, refresh, fetchMe } = useAuthStore();
   const [starting, setStarting] = useState(true);
 
-  const init = async () => {
+  const init = useCallback(async () => {
     try {
       const authState = useAuthStore.getState();
 
@@ -30,11 +30,11 @@ const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
     } finally {
       setStarting(false);
     }
-  };
+  }, [fetchMe, refresh]);
 
   useEffect(() => {
     init();
-  }, []);
+  }, [init]);
 
   if (starting || loading) {
     return <AppLoadingScreen message="Đang tải trang..." />;

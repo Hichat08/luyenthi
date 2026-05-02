@@ -20,8 +20,10 @@ export interface AdminOverviewResponse {
   latestUsers: AdminOverviewUser[];
 }
 
-export interface AdminNotificationTargetUser
-  extends Pick<User, "_id" | "username" | "displayName" | "avatarUrl" | "classroom" | "userCode"> {}
+export type AdminNotificationTargetUser = Pick<
+  User,
+  "_id" | "username" | "displayName" | "avatarUrl" | "classroom" | "userCode"
+>;
 
 export interface AdminNotificationRecord {
   id: string;
@@ -79,6 +81,7 @@ export interface AdminAnalyticsResponse {
 
 export interface AdminCreateExamQuestionPayload {
   topicLabel?: string;
+  questionCode?: string;
   prompt: string;
   imageUrl?: string;
   hint?: string;
