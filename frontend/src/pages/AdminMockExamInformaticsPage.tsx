@@ -64,15 +64,33 @@ export default function AdminMockExamInformaticsPage() {
       return toast.error("Thời lượng không hợp lệ.");
     }
 
+    const missingMcqIndex = mcq.findIndex(
+      (question) =>
+        !question.prompt.trim() ||
+        question.options.map((option) => option.trim()).filter(Boolean).length < 4,
+    );
+
+    if (missingMcqIndex >= 0) {
+      return toast.error(`Câu trắc nghiệm ${missingMcqIndex + 1} chưa đủ nội dung hoặc 4 đáp án.`);
+    }
+
+    const missingTfGroupIndex = tfGroups.findIndex(
+      (group) =>
+        !group.prompt.trim() ||
+        group.statements.some((statement) => !statement.text.trim()),
+    );
+
+    if (missingTfGroupIndex >= 0) {
+      return toast.error(`Câu đúng/sai ${missingTfGroupIndex + 1} chưa đủ đoạn dẫn hoặc các ý.`);
+    }
+
     const flattenedTrueFalse = tfGroups.flatMap((group, groupIndex) =>
       group.statements.map((item, statementIndex) => ({
         topicLabel: "Đúng/Sai",
         questionCode:
           sanitizeCode(item.code) ||
           `TH-DS-${groupIndex + 1}${String.fromCharCode(65 + statementIndex)}`,
-        prompt: `${group.prompt.trim()}\nÝ ${String.fromCharCode(97 + statementIndex)}: ${
-          item.text
-        }`,
+        prompt: `${group.prompt.trim()}\nÝ ${String.fromCharCode(97 + statementIndex)}: ${item.text.trim()}`,
         options: ["Đúng", "Sai"],
         correctIndex: item.isTrue ? 0 : 1,
         hint: "",
