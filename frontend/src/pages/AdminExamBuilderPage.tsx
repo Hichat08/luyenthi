@@ -25,9 +25,13 @@ import { toast } from "sonner";
 type ExamCategory = "illustration" | "specialized" | "self-study";
 type ExamType = "multiple_choice" | "essay";
 
+type QuestionKind = "multiple_choice" | "true_false";
+
 type QuestionForm = {
   topicLabel: string;
+  questionCode: string;
   prompt: string;
+  kind: QuestionKind;
   options: string[];
   correctIndex: number;
   hint: string;
@@ -65,10 +69,12 @@ const categoryOptions: Array<{ value: ExamCategory; label: string; description: 
   },
 ];
 
-const createEmptyQuestion = (): QuestionForm => ({
+const createEmptyQuestion = (kind: QuestionKind = "multiple_choice"): QuestionForm => ({
   topicLabel: "",
+  questionCode: "",
   prompt: "",
-  options: ["", "", "", ""],
+  kind,
+  options: kind === "true_false" ? ["Đúng", "Sai"] : ["", "", "", ""],
   correctIndex: 0,
   hint: "",
   formula: "",
@@ -171,6 +177,35 @@ export default function AdminExamBuilderPage() {
     setQuestions((current) => [...current, createEmptyQuestion()]);
   };
 
+  const handleChangeQuestionKind = (index: number, kind: QuestionKind) => {
+    setQuestions((current) =>
+      current.map((question, questionIndex) => {
+        if (questionIndex !== index) {
+          return question;
+        }
+
+        if (kind === "true_false") {
+          return {
+            ...question,
+            kind,
+            options: ["Đúng", "Sai"],
+            correctIndex: question.correctIndex > 1 ? 0 : question.correctIndex,
+          };
+        }
+
+        return {
+          ...question,
+          kind,
+          options:
+            question.options.length >= 4
+              ? question.options.slice(0, 4)
+              : [...question.options, ...Array.from({ length: 4 - question.options.length }, () => "")],
+          correctIndex: Math.min(question.correctIndex, 3),
+        };
+      })
+    );
+  };
+
   const handleRemoveQuestion = (index: number) => {
     setQuestions((current) => {
       if (current.length === 1) {
@@ -224,8 +259,11 @@ export default function AdminExamBuilderPage() {
     if (examType === "multiple_choice") {
       payload.questions = questions.map((question) => ({
         topicLabel: normalizeText(question.topicLabel),
+        questionCode: normalizeText(question.questionCode).toUpperCase().replace(/\s+/g, ""),
         prompt: question.prompt.trim(),
-        options: question.options.map((option) => option.trim()).filter(Boolean),
+        options: (question.kind === "true_false" ? ["Đúng", "Sai"] : question.options)
+          .map((option) => option.trim())
+          .filter(Boolean),
         correctIndex: question.correctIndex,
         hint: question.hint.trim(),
         formula: question.formula.trim(),
@@ -509,6 +547,13 @@ export default function AdminExamBuilderPage() {
                         placeholder="Chủ đề, ví dụ: Hàm số, OOP, Sóng cơ..."
                         className="h-10 rounded-[0.95rem] border-border/75 bg-card text-[13px]"
                       />
+                      <Input
+                        value={question.questionCode}
+                        onChange={(event) => updateQuestion(index, { questionCode: event.target.value })}
+                        placeholder={question.kind === "true_false" ? "Mã gợi ý: TH-DS-01A" : "Mã gợi ý: TH-MC-001"}
+                        className="h-10 rounded-[0.95rem] border-border/75 bg-card text-[13px]"
+                      />
+                      <p className="text-[11px] text-muted-foreground">Gợi ý mã: Trắc nghiệm dùng TH-MC-001, TH-MC-002... | Đúng/Sai dùng TH-DS-01A, TH-DS-01B...</p>
                       <Textarea
                         value={question.prompt}
                         onChange={(event) =>
@@ -517,6 +562,31 @@ export default function AdminExamBuilderPage() {
                         placeholder="Nội dung câu hỏi"
                         className="min-h-24 rounded-[1rem] border-border/75 bg-card px-3 py-2.5 text-[13px]"
                       />
+
+                      <div className="space-y-1.5">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                          Dạng câu hỏi
+                        </p>
+                        <div className="flex gap-2">
+                          {[
+                            { value: "multiple_choice", label: "Trắc nghiệm" },
+                            { value: "true_false", label: "Đúng / Sai" },
+                          ].map((item) => (
+                            <button
+                              key={`kind-${index}-${item.value}`}
+                              type="button"
+                              className={`rounded-[0.9rem] border px-3 py-2 text-[12px] font-bold transition ${
+                                question.kind === item.value
+                                  ? "border-primary bg-primary/10 text-primary"
+                                  : "border-border bg-card text-muted-foreground hover:border-primary/16 hover:text-primary"
+                              }`}
+                              onClick={() => handleChangeQuestionKind(index, item.value as QuestionKind)}
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
                       <div className="grid gap-2 md:grid-cols-2">
                         {question.options.map((option, optionIndex) => (
@@ -531,6 +601,7 @@ export default function AdminExamBuilderPage() {
                               }
                               placeholder={`Nhập đáp án ${String.fromCharCode(65 + optionIndex)}`}
                               className="h-10 rounded-[0.95rem] border-border/75 bg-card text-[13px]"
+                              disabled={question.kind === "true_false"}
                             />
                           </div>
                         ))}

@@ -79,6 +79,7 @@ export interface AdminAnalyticsResponse {
 
 export interface AdminCreateExamQuestionPayload {
   topicLabel?: string;
+  questionCode?: string;
   prompt: string;
   imageUrl?: string;
   hint?: string;

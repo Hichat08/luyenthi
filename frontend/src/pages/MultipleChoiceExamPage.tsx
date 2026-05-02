@@ -83,6 +83,37 @@ const buildInformaticsAttemptExamId = ({
   ].join("__");
 };
 
+const calculateInformaticsMockScore = (
+  questions: ExamQuestion[],
+  answers: Record<number, number>,
+) => {
+  const scoreByTfCorrectCount = [0, 0.1, 0.25, 0.5, 1];
+  let totalScore = 0;
+  let trueFalseBucket: boolean[] = [];
+
+  questions.forEach((question, index) => {
+    const picked = answers[question.id];
+    const isCorrect = picked === question.correctIndex;
+    const isTrueFalse = question.topicLabel?.trim() === "Đúng/Sai";
+
+    if (!isTrueFalse && index < 24) {
+      totalScore += isCorrect ? 0.25 : 0;
+      return;
+    }
+
+    if (isTrueFalse) {
+      trueFalseBucket.push(isCorrect);
+      if (trueFalseBucket.length === 4) {
+        const correctInGroup = trueFalseBucket.filter(Boolean).length;
+        totalScore += scoreByTfCorrectCount[correctInGroup] ?? 0;
+        trueFalseBucket = [];
+      }
+    }
+  });
+
+  return Math.round(totalScore * 100) / 100;
+};
+
 const MultipleChoiceExamPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -268,6 +299,10 @@ const MultipleChoiceExamPage = () => {
         return count + Number(question?.correctIndex === answerIndex);
       }, 0);
       const wrongCount = selectedEntries.length - correctCount;
+      const customScore =
+        exam.subjectSlug === "tin-hoc" && preparedQuestions.length >= 40
+          ? calculateInformaticsMockScore(preparedQuestions, selectedAnswers)
+          : undefined;
       const timeSpentSeconds = durationMinutes * 60 - timeLeft;
       const rankingExamId =
         exam.subjectSlug === "tin-hoc"
@@ -309,6 +344,7 @@ const MultipleChoiceExamPage = () => {
         topicAnalysis: calculateTopicAnalysis(preparedQuestions, selectedAnswers),
         selectedAnswers,
         questions: preparedQuestions,
+        score: customScore,
       };
 
       saveLastExamResult(resultState);
@@ -328,9 +364,10 @@ const MultipleChoiceExamPage = () => {
               correctCount,
               totalQuestions: preparedQuestions.length,
               score:
-                preparedQuestions.length > 0
+                customScore ??
+                (preparedQuestions.length > 0
                   ? (correctCount / preparedQuestions.length) * 10
-                  : 0,
+                  : 0),
               timeSpentSeconds,
             })
           );

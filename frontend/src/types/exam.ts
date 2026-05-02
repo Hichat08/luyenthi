@@ -10,6 +10,7 @@ export type TopicAnalysisItem = {
 export type ExamQuestion = {
   id: number;
   topicLabel?: string;
+  questionCode?: string;
   prompt: string;
   imageUrl?: string;
   hint: string;

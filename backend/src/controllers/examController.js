@@ -51,6 +51,12 @@ const toSlugFragment = (value = "") =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
+const sanitizeQuestionCode = (value = "") =>
+  normalizeText(value)
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9._-]/g, "");
+
 export const getExams = async (req, res) => {
   try {
     try {
@@ -79,7 +85,7 @@ export const getExams = async (req, res) => {
     }
 
     const persistedExams = await Exam.find(query)
-      .sort({ examId: 1 })
+      .sort({ createdAt: -1, updatedAt: -1, examId: 1 })
       .select("-questions -essayContent")
       .lean();
 
@@ -239,6 +245,7 @@ export const createAdminExam = async (req, res) => {
         return {
           id: index + 1,
           topicLabel: normalizeText(question?.topicLabel),
+          questionCode: sanitizeQuestionCode(question?.questionCode),
           prompt,
           imageUrl: normalizeText(question?.imageUrl),
           hint: normalizeText(question?.hint),

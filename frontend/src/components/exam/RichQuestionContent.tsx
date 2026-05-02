@@ -15,10 +15,7 @@ export const decodeHtmlEntities = (value: string) =>
 
 const renderTextWithBreaks = (text: string, keyPrefix: string) => {
   const normalized = decodeHtmlEntities(text).replace(/<br\s*\/?>/gi, "\n");
-  const lines = normalized
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+  const lines = normalized.split("\n");
 
   if (lines.length === 0) {
     return null;
@@ -26,16 +23,23 @@ const renderTextWithBreaks = (text: string, keyPrefix: string) => {
 
   return (
     <div className="space-y-2">
-      {lines.map((line, index) => (
-        <p key={`${keyPrefix}-${index}`}>{line}</p>
-      ))}
+      {lines.map((line, index) =>
+        line.trim().length > 0 ? (
+          <p key={`${keyPrefix}-${index}`} className="whitespace-pre-wrap break-words">
+            {line}
+          </p>
+        ) : (
+          <div key={`${keyPrefix}-${index}`} className="h-2" />
+        )
+      )}
     </div>
   );
 };
 
 const RichQuestionContent = ({ content, className }: RichQuestionContentProps) => {
   const blocks: Array<{ type: "text" | "code"; value: string }> = [];
-  const codeBlockRegex = /<pre>\s*<code>([\s\S]*?)<\/code>\s*<\/pre>/gi;
+  const codeBlockRegex =
+    /<pre>\s*<code>([\s\S]*?)<\/code>\s*<\/pre>|```(?:[a-zA-Z0-9_+-]+)?\n([\s\S]*?)```/gi;
 
   let lastIndex = 0;
   let match: RegExpExecArray | null = null;
@@ -46,7 +50,7 @@ const RichQuestionContent = ({ content, className }: RichQuestionContentProps) =
       blocks.push({ type: "text", value: before });
     }
 
-    blocks.push({ type: "code", value: match[1] });
+    blocks.push({ type: "code", value: match[1] || match[2] || "" });
     lastIndex = match.index + match[0].length;
   }
 
