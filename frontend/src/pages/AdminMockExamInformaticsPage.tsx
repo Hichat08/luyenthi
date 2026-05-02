@@ -2,7 +2,10 @@ import AdminShell from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { adminService, type AdminCreateExamPayload } from "@/services/adminService";
+import {
+  adminService,
+  type AdminCreateExamPayload,
+} from "@/services/adminService";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -25,7 +28,11 @@ type TfGroup = {
 };
 
 const sanitizeCode = (value: string) =>
-  value.trim().toUpperCase().replace(/\s+/g, "").replace(/[^A-Z0-9._-]/g, "");
+  value
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9._-]/g, "");
 
 const createMcq = (): McqQuestion => ({
   questionCode: "",
@@ -46,8 +53,12 @@ const createTfGroup = (): TfGroup => ({
 export default function AdminMockExamInformaticsPage() {
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState("50");
-  const [mcq, setMcq] = useState<McqQuestion[]>(Array.from({ length: 24 }, createMcq));
-  const [tfGroups, setTfGroups] = useState<TfGroup[]>(Array.from({ length: 4 }, createTfGroup));
+  const [mcq, setMcq] = useState<McqQuestion[]>(
+    Array.from({ length: 24 }, createMcq),
+  );
+  const [tfGroups] = useState<TfGroup[]>(
+    Array.from({ length: 4 }, createTfGroup),
+  );
   const [submitting, setSubmitting] = useState(false);
 
   const totalFilled = useMemo(() => {
@@ -69,7 +80,7 @@ export default function AdminMockExamInformaticsPage() {
     const missingMcqIndex = mcq.findIndex(
       (q) =>
         !q.prompt.trim() ||
-        q.options.map((o) => o.trim()).filter(Boolean).length < 4
+        q.options.map((o) => o.trim()).filter(Boolean).length < 4,
     );
     if (missingMcqIndex >= 0) {
       return toast.error(`Câu ${missingMcqIndex + 1} chưa đủ 4 đáp án.`);
@@ -77,9 +88,7 @@ export default function AdminMockExamInformaticsPage() {
 
     // Validate TF
     const missingTfIndex = tfGroups.findIndex(
-      (g) =>
-        !g.prompt.trim() ||
-        g.statements.some((s) => !s.text.trim())
+      (g) => !g.prompt.trim() || g.statements.some((s) => !s.text.trim()),
     );
     if (missingTfIndex >= 0) {
       return toast.error(`Câu Đ/S ${missingTfIndex + 1} chưa đủ dữ liệu.`);
@@ -99,7 +108,7 @@ export default function AdminMockExamInformaticsPage() {
         explanationTitle: `Câu Đ/S ${gi + 1}${String.fromCharCode(97 + si)}`,
         explanationSteps: [],
         explanationConclusion: "",
-      }))
+      })),
     );
 
     const payload: AdminCreateExamPayload = {
@@ -149,8 +158,16 @@ export default function AdminMockExamInformaticsPage() {
     >
       <section className="space-y-4 rounded-2xl border bg-card p-4">
         <div className="grid gap-3 md:grid-cols-2">
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Tiêu đề" />
-          <Input value={duration} onChange={(e) => setDuration(e.target.value)} placeholder="Thời gian (phút)" />
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Tiêu đề"
+          />
+          <Input
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            placeholder="Thời gian (phút)"
+          />
         </div>
 
         <p>Đã điền: {totalFilled}/28</p>
@@ -163,8 +180,8 @@ export default function AdminMockExamInformaticsPage() {
               onChange={(e) =>
                 setMcq((cur) =>
                   cur.map((x, idx) =>
-                    idx === i ? { ...x, questionCode: e.target.value } : x
-                  )
+                    idx === i ? { ...x, questionCode: e.target.value } : x,
+                  ),
                 )
               }
               placeholder={`TH-MC-${i + 1}`}
@@ -174,8 +191,8 @@ export default function AdminMockExamInformaticsPage() {
               onChange={(e) =>
                 setMcq((cur) =>
                   cur.map((x, idx) =>
-                    idx === i ? { ...x, prompt: e.target.value } : x
-                  )
+                    idx === i ? { ...x, prompt: e.target.value } : x,
+                  ),
                 )
               }
               placeholder={`Câu ${i + 1}`}
