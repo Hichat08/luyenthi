@@ -52,6 +52,13 @@ const adminMenuItems: AdminMenuItem[] = [
     path: "/admin/exams/new",
   },
   {
+    key: "mock-informatics",
+    label: "Thi thử Tin học",
+    description: "Tạo đề 24 + 4 Đ/S",
+    icon: FilePlus2,
+    path: "/admin/exams/informatics-mock",
+  },
+  {
     key: "notifications",
     label: "Thông báo",
     description: "Gửi nhắc nhở và bài mới",
