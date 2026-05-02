@@ -29,7 +29,7 @@ import {
   Square,
   Tag,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
@@ -141,7 +141,6 @@ const MultipleChoiceExamPage = () => {
   const exitEventsRef = useRef<string[]>([]);
   const autoSubmittedRef = useRef(false);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!examId) {
       navigate("/practice", { replace: true });
@@ -260,7 +259,6 @@ const MultipleChoiceExamPage = () => {
     return exam.questions.filter((question) => selectedSet.has(question.topicLabel?.trim() || ""));
   }, [exam, selectedTopicLabels, topicOptions]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!hasStarted || !preparedQuestions.length || timeLeft === null) {
       return undefined;
@@ -279,7 +277,7 @@ const MultipleChoiceExamPage = () => {
     return () => window.clearInterval(timer);
   }, [hasStarted, preparedQuestions.length, timeLeft]);
 
-  const handleSubmitExam = async (
+  const handleSubmitExam = useCallback(async (
     autoSubmit = false,
     antiCheatOverride?: {
       suspiciousExitCount: number;
@@ -389,9 +387,21 @@ const MultipleChoiceExamPage = () => {
       setIsSubmitting(false);
       setConfirmOpen(false);
     }
-  };
+  }, [
+    attemptExamId,
+    durationMinutes,
+    exam,
+    isSubmitting,
+    launchState?.launchSource,
+    navigate,
+    preparedQuestions,
+    selectedAnswers,
+    selectedTopicLabels,
+    timeLeft,
+    user?.displayName,
+    user?.username,
+  ]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!hasStarted || timeLeft !== 0) {
       return;
@@ -471,7 +481,7 @@ const MultipleChoiceExamPage = () => {
     );
   };
 
-  const handleStartExam = () => {
+  const handleStartExam = useCallback(() => {
     if (!exam) {
       return;
     }
@@ -523,7 +533,7 @@ const MultipleChoiceExamPage = () => {
           })
         : exam.examId
     );
-  };
+  }, [availableQuestions, durationMinutes, exam, questionLimit, selectedTopicLabels]);
 
   useEffect(() => {
     if (!exam || !launchState?.autoStart || hasStarted || selectedTopicLabels.length === 0) {
