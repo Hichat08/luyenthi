@@ -104,8 +104,8 @@ const HomePage = () => {
         progressPercentage: 0,
       }
   );
-  const studyGoals = user?.studyGoals?.subjects ?? [];
   const selectedSubjects = useMemo(() => {
+    const studyGoals = user?.studyGoals?.subjects ?? [];
     if (studyGoals.length > 0) {
       return studyGoals;
     }
@@ -115,7 +115,7 @@ const HomePage = () => {
       currentScore: 0,
       targetScore: 10,
     }));
-  }, [studyGoals, user?.studyGoals?.selectedSubjects]);
+  }, [user?.studyGoals?.selectedSubjects, user?.studyGoals?.subjects]);
   const hasStudyGoals =
     selectedSubjects.length > 0 || (user?.studyGoals?.selectedSubjects?.length ?? 0) > 0;
   const subjectSetupInitialValue = useMemo(
@@ -167,7 +167,7 @@ const HomePage = () => {
     return () => {
       cancelled = true;
     };
-  }, [setRemoteNotifications, user]);
+  }, [conversations, setRemoteNotifications, user]);
 
   useEffect(() => {
     let cancelled = false;

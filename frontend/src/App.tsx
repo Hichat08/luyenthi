@@ -31,7 +31,7 @@ function App() {
 
   useEffect(() => {
     setTheme(isDark);
-  }, [isDark]);
+  }, [isDark, setTheme]);
 
   useEffect(() => {
     if (accessToken) {
@@ -39,7 +39,7 @@ function App() {
     }
 
     return () => disconnectSocket();
-  }, [accessToken]);
+  }, [accessToken, connectSocket, disconnectSocket]);
 
   return (
     <>

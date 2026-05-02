@@ -175,6 +175,7 @@ export default function SchoolScheduleSetupDialog({
     setNewSubjectName("");
     setError("");
     setIsSaving(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, open]);
 
   useEffect(() => {

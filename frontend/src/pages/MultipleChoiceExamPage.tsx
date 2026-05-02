@@ -141,6 +141,7 @@ const MultipleChoiceExamPage = () => {
   const exitEventsRef = useRef<string[]>([]);
   const autoSubmittedRef = useRef(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!examId) {
       navigate("/practice", { replace: true });
@@ -230,7 +231,7 @@ const MultipleChoiceExamPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [examId, launchState?.durationMinutes, launchState?.questionLimit, launchState?.selectedTopicLabels, navigate, subjectSlug]);
+  }, [examId, launchState?.durationMinutes, launchState?.initialExamDetail, launchState?.questionLimit, launchState?.selectedTopicLabels, navigate, subjectSlug]);
 
   const topicOptions = useMemo(() => {
     if (!exam) {
@@ -259,6 +260,7 @@ const MultipleChoiceExamPage = () => {
     return exam.questions.filter((question) => selectedSet.has(question.topicLabel?.trim() || ""));
   }, [exam, selectedTopicLabels, topicOptions]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!hasStarted || !preparedQuestions.length || timeLeft === null) {
       return undefined;
@@ -389,13 +391,14 @@ const MultipleChoiceExamPage = () => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!hasStarted || timeLeft !== 0) {
       return;
     }
 
     void handleSubmitExam(true);
-  }, [hasStarted, timeLeft]);
+  }, [handleSubmitExam, hasStarted, timeLeft]);
 
   useEffect(() => {
     if (!hasStarted) {
@@ -452,7 +455,7 @@ const MultipleChoiceExamPage = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [hasStarted, isSubmitting]);
+  }, [handleSubmitExam, hasStarted, isSubmitting]);
 
   const handleToggleTopic = (topicLabel: string) => {
     setSelectedTopicLabels((current) =>
@@ -528,7 +531,7 @@ const MultipleChoiceExamPage = () => {
     }
 
     handleStartExam();
-  }, [exam, hasStarted, launchState?.autoStart, selectedTopicLabels]);
+  }, [exam, handleStartExam, hasStarted, launchState?.autoStart, selectedTopicLabels]);
 
   if (isLoadingExam) {
     return (
