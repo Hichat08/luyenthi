@@ -34,8 +34,6 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
   const [durationMinutesInput, setDurationMinutesInput] = useState("50");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  if (!user) return;
-
   const topicOptions = useMemo(() => {
     if (!informaticsTemplate) {
       return [];
@@ -117,6 +115,7 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
   }, [createExamOpen, informaticsTemplate, selectedConvo.type]);
 
   const sendMessage = async () => {
+    if (!user) return;
     if (!value.trim()) return;
     const currValue = value;
     setValue("");

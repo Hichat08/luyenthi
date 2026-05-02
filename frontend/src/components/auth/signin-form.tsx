@@ -89,7 +89,18 @@ export function SigninForm() {
     script.defer = true;
 
     script.onload = () => {
-      const google = (window as any).google;
+      const google = (window as Window & { google?: { accounts?: { id?: {
+        initialize: (config: {
+          client_id: string;
+          callback: (response: { credential?: string }) => void;
+          ux_mode: "popup";
+          auto_select: boolean;
+        }) => void;
+        renderButton: (
+          el: HTMLElement,
+          options: { type: string; theme: string; size: string; width: string; text: string }
+        ) => void;
+      } } } }).google;
 
       if (!google?.accounts?.id) {
         return;
@@ -140,7 +151,7 @@ export function SigninForm() {
     try {
       const PasswordCredentialCtor = (
         window as Window & {
-          PasswordCredential?: new (form: HTMLFormElement) => any;
+          PasswordCredential?: new (form: HTMLFormElement) => Credential;
         }
       ).PasswordCredential;
 
