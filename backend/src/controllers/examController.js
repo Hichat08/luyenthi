@@ -4,26 +4,20 @@ import Subject from "../models/Subject.js";
 import { defaultExamDocuments } from "../data/examCatalog.js";
 import { createSubjectSlug, normalizeSubjectKey } from "../utils/subjectKey.js";
 
-let seedPromise = null;
-
 const ensureDefaultExams = async () => {
-  if (!seedPromise) {
-    seedPromise = Exam.bulkWrite(
-      defaultExamDocuments.map((exam) => ({
-        updateOne: {
-          filter: { examId: exam.examId },
-          update: { $set: exam },
-          upsert: true,
-        },
-      })),
-      { ordered: false }
-    ).catch((error) => {
-      seedPromise = null;
-      throw error;
-    });
-  }
-
-  await seedPromise;
+  await Exam.bulkWrite(
+    defaultExamDocuments.map((exam) => ({
+      updateOne: {
+        filter: { examId: exam.examId },
+        update: { $set: exam },
+        upsert: true,
+      },
+    })),
+    { ordered: false },
+  ).catch((error) => {
+    console.error("Không thể seed bộ đề mặc định:", error);
+    throw error;
+  });
 };
 
 const formatAttemptLabel = (attemptCount) => {
@@ -62,7 +56,10 @@ export const getExams = async (req, res) => {
     try {
       await ensureDefaultExams();
     } catch (seedError) {
-      console.error("Không thể seed bộ đề mặc định, dùng fallback in-memory.", seedError);
+      console.error(
+        "Không thể seed bộ đề mặc định, dùng fallback in-memory.",
+        seedError,
+      );
     }
 
     const subjectSlug = `${req.query?.subjectSlug ?? ""}`.trim();
@@ -90,7 +87,7 @@ export const getExams = async (req, res) => {
       persistedExams.length > 0
         ? persistedExams
         : getDefaultExamsBySubjectSlug(query.subjectSlug).map(
-            ({ questions, essayContent, ...exam }) => exam
+            ({ questions, essayContent, ...exam }) => exam,
           );
 
     const attemptRows = await PracticeAttempt.aggregate([
@@ -108,7 +105,7 @@ export const getExams = async (req, res) => {
     ]);
 
     const attemptCountByExamId = new Map(
-      attemptRows.map((row) => [row._id, row.attemptCount])
+      attemptRows.map((row) => [row._id, row.attemptCount]),
     );
 
     return res.status(200).json({
@@ -132,7 +129,10 @@ export const getExamDetail = async (req, res) => {
     try {
       await ensureDefaultExams();
     } catch (seedError) {
-      console.error("Không thể seed bộ đề mặc định, dùng fallback in-memory.", seedError);
+      console.error(
+        "Không thể seed bộ đề mặc định, dùng fallback in-memory.",
+        seedError,
+      );
     }
 
     const examId = `${req.params?.examId ?? ""}`.trim();
@@ -169,7 +169,9 @@ export const createAdminExam = async (req, res) => {
     const imageUrl = normalizeText(req.body?.imageUrl);
 
     if (!subject || !title) {
-      return res.status(400).json({ message: "Môn học và tiêu đề đề thi là bắt buộc." });
+      return res
+        .status(400)
+        .json({ message: "Môn học và tiêu đề đề thi là bắt buộc." });
     }
 
     if (!["multiple_choice", "essay"].includes(examType)) {
@@ -185,13 +187,17 @@ export const createAdminExam = async (req, res) => {
     }
 
     if (!Number.isFinite(durationMinutes) || durationMinutes < 1) {
-      return res.status(400).json({ message: "Thời lượng làm bài phải lớn hơn 0." });
+      return res
+        .status(400)
+        .json({ message: "Thời lượng làm bài phải lớn hơn 0." });
     }
 
     const subjectSlug = createSubjectSlug(subject);
 
     if (!subjectSlug) {
-      return res.status(400).json({ message: "Không thể tạo mã môn học hợp lệ." });
+      return res
+        .status(400)
+        .json({ message: "Không thể tạo mã môn học hợp lệ." });
     }
 
     let questionCount = 0;
@@ -199,10 +205,14 @@ export const createAdminExam = async (req, res) => {
     let essayContent = {};
 
     if (examType === "multiple_choice") {
-      const rawQuestions = Array.isArray(req.body?.questions) ? req.body.questions : [];
+      const rawQuestions = Array.isArray(req.body?.questions)
+        ? req.body.questions
+        : [];
 
       if (rawQuestions.length === 0) {
-        return res.status(400).json({ message: "Đề trắc nghiệm phải có ít nhất 1 câu hỏi." });
+        return res
+          .status(400)
+          .json({ message: "Đề trắc nghiệm phải có ít nhất 1 câu hỏi." });
       }
 
       questions = rawQuestions.map((question, index) => {
@@ -218,7 +228,11 @@ export const createAdminExam = async (req, res) => {
           throw new Error(`Câu ${index + 1} phải có ít nhất 2 đáp án.`);
         }
 
-        if (!Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex >= options.length) {
+        if (
+          !Number.isInteger(correctIndex) ||
+          correctIndex < 0 ||
+          correctIndex >= options.length
+        ) {
           throw new Error(`Câu ${index + 1} có đáp án đúng không hợp lệ.`);
         }
 
@@ -248,9 +262,14 @@ export const createAdminExam = async (req, res) => {
         statusNote: normalizeText(rawEssayContent.statusNote),
       };
 
-      if (!essayContent.readingPassage || !essayContent.readingQuestion || !essayContent.essayPrompt) {
+      if (
+        !essayContent.readingPassage ||
+        !essayContent.readingQuestion ||
+        !essayContent.essayPrompt
+      ) {
         return res.status(400).json({
-          message: "Đề tự luận cần đủ đoạn đọc hiểu, câu hỏi đọc hiểu và câu nghị luận.",
+          message:
+            "Đề tự luận cần đủ đoạn đọc hiểu, câu hỏi đọc hiểu và câu nghị luận.",
         });
       }
 
@@ -287,7 +306,7 @@ export const createAdminExam = async (req, res) => {
           createdBy: req.user?._id ?? null,
         },
       },
-      { upsert: true }
+      { upsert: true },
     );
 
     return res.status(201).json({
@@ -309,7 +328,10 @@ export const createAdminExam = async (req, res) => {
   } catch (error) {
     console.error("Lỗi khi admin tạo đề thi", error);
     return res.status(400).json({
-      message: error instanceof Error && error.message ? error.message : "Không thể tạo đề thi.",
+      message:
+        error instanceof Error && error.message
+          ? error.message
+          : "Không thể tạo đề thi.",
     });
   }
 };

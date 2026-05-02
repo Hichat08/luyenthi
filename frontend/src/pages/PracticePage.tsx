@@ -74,8 +74,12 @@ const canonicalizePracticeSubject = (subject: string) => {
 const PracticePage = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const { chatUnreadCount, conversations, fetchCommunityConversation, fetchConversations } =
-    useChatStore();
+  const {
+    chatUnreadCount,
+    conversations,
+    fetchCommunityConversation,
+    fetchConversations,
+  } = useChatStore();
   const { unreadCount, syncNotifications } = useNotificationStore();
   const [dailyProgress, setDailyProgress] = useState<DailyProgress>(
     () =>
@@ -84,22 +88,21 @@ const PracticePage = () => {
         dailyTarget: 10,
         remainingExams: 10,
         progressPercentage: 0,
-      }
+      },
   );
   const practiceSubjects = [
-    ...(
-      user?.studyGoals?.selectedSubjects?.length
-        ? user.studyGoals.selectedSubjects
-        : user?.studyGoals?.subjects?.map((item) => item.subject) ?? []
-    ),
+    ...(user?.studyGoals?.selectedSubjects?.length
+      ? user.studyGoals.selectedSubjects
+      : (user?.studyGoals?.subjects?.map((item) => item.subject) ?? [])),
     ...ALWAYS_AVAILABLE_PRACTICE_SUBJECTS,
   ]
     .filter((subject): subject is string => Boolean(subject))
     .map(canonicalizePracticeSubject)
     .filter(
       (subject, index, array) =>
-        array.findIndex((item) => normalizeSubjectKey(item) === normalizeSubjectKey(subject)) ===
-        index
+        array.findIndex(
+          (item) => normalizeSubjectKey(item) === normalizeSubjectKey(subject),
+        ) === index,
     )
     .map(getPracticeSubjectItem);
 
@@ -247,8 +250,7 @@ const PracticePage = () => {
             <div
               className="grid size-14 shrink-0 place-items-center rounded-full bg-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_16px_30px_-24px_hsl(var(--primary)/0.38)] min-[390px]:size-16"
               style={{
-                background:
-                  `conic-gradient(#facc15 0 ${dailyProgress.progressPercentage}%, hsl(var(--primary) / 0.16) ${dailyProgress.progressPercentage}% 100%)`,
+                background: `conic-gradient(#facc15 0 ${dailyProgress.progressPercentage}%, hsl(var(--primary) / 0.16) ${dailyProgress.progressPercentage}% 100%)`,
               }}
               aria-label={`Tiến độ ${dailyProgress.progressPercentage}%`}
             >
@@ -274,42 +276,50 @@ const PracticePage = () => {
 
           {practiceSubjects.length > 0 ? (
             <div className="grid grid-cols-4 gap-2 min-[390px]:gap-3">
-              {practiceSubjects.map(({ className, icon: Icon, label, available }) => (
-                <button
-                  key={label}
-                  type="button"
-                  className="flex min-w-0 flex-col items-center gap-1.5 min-[390px]:gap-2"
-                  onClick={() => handleOpenSubject(label)}
-                  aria-label={
-                    available ? `Mở môn ${label}` : `Môn ${label} đang cập nhật`
-                  }
-                >
-                  <span
-                    className={`relative grid size-12 place-items-center rounded-xl border shadow-sm transition min-[390px]:size-14 ${
-                      available ? className : `${className} opacity-55 grayscale`
-                    }`}
+              {practiceSubjects.map(
+                ({ className, icon: Icon, label, available }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className="flex min-w-0 flex-col items-center gap-1.5 min-[390px]:gap-2"
+                    onClick={() => handleOpenSubject(label)}
+                    aria-label={
+                      available
+                        ? `Mở môn ${label}`
+                        : `Môn ${label} đang cập nhật`
+                    }
                   >
-                    <Icon className="size-6 min-[390px]:size-7" />
+                    <span
+                      className={`relative grid size-12 place-items-center rounded-xl border shadow-sm transition min-[390px]:size-14 ${
+                        available
+                          ? className
+                          : `${className} opacity-55 grayscale`
+                      }`}
+                    >
+                      <Icon className="size-6 min-[390px]:size-7" />
+                      {!available ? (
+                        <span className="absolute -right-1.5 -top-1.5 rounded-full border border-white/80 bg-amber-100 px-1.5 py-0.5 text-[0.48rem] font-black uppercase tracking-[0.08em] text-amber-700 shadow-sm min-[390px]:text-[0.52rem]">
+                          Mới
+                        </span>
+                      ) : null}
+                    </span>
+                    <span
+                      className={`font-auth-body text-[0.7rem] font-bold leading-tight min-[390px]:text-xs ${
+                        available
+                          ? "text-muted-foreground"
+                          : "text-muted-foreground/80"
+                      }`}
+                    >
+                      {label}
+                    </span>
                     {!available ? (
-                      <span className="absolute -right-1.5 -top-1.5 rounded-full border border-white/80 bg-amber-100 px-1.5 py-0.5 text-[0.48rem] font-black uppercase tracking-[0.08em] text-amber-700 shadow-sm min-[390px]:text-[0.52rem]">
-                        Mới
+                      <span className="text-[0.58rem] font-black uppercase tracking-[0.08em] text-amber-700/90 min-[390px]:text-[0.62rem]">
+                        Đang cập nhật
                       </span>
                     ) : null}
-                  </span>
-                  <span
-                    className={`font-auth-body text-[0.7rem] font-bold leading-tight min-[390px]:text-xs ${
-                      available ? "text-muted-foreground" : "text-muted-foreground/80"
-                    }`}
-                  >
-                    {label}
-                  </span>
-                  {!available ? (
-                    <span className="text-[0.58rem] font-black uppercase tracking-[0.08em] text-amber-700/90 min-[390px]:text-[0.62rem]">
-                      Đang cập nhật
-                    </span>
-                  ) : null}
-                </button>
-              ))}
+                  </button>
+                ),
+              )}
             </div>
           ) : (
             <div className="rounded-[1.2rem] border border-dashed border-border/80 bg-card/70 px-4 py-5 text-center shadow-[0_14px_34px_-28px_hsl(var(--primary)/0.18)]">
@@ -318,6 +328,30 @@ const PracticePage = () => {
               </p>
             </div>
           )}
+        </section>
+
+        <section className="rounded-[1.4rem] border border-border/70 bg-card p-4 shadow-[0_24px_48px_-34px_hsl(var(--primary)/0.18)]">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary/80">
+                Trang mới
+              </p>
+              <h2 className="mt-2 text-lg font-black text-foreground">
+                Luyện đề giữa kì & cuối kì
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Mở trang riêng để luyện đề giữa kì và cuối kì theo mẫu đề thi
+                thử.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="rounded-2xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
+              onClick={() => navigate("/practice/luyen-de-giua-cuoi-ki")}
+            >
+              Xem trang
+            </button>
+          </div>
         </section>
 
         <section className="space-y-3.5 min-[390px]:space-y-4">
@@ -388,7 +422,7 @@ const PracticePage = () => {
                   </button>
                 </div>
               </article>
-            )
+            ),
           )}
         </section>
       </main>

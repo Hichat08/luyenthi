@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { readLastExamResult } from "@/lib/examResultStorage";
 import { getSubjectIcon } from "@/lib/subjectMeta";
-import { cn } from "@/lib/utils";
+import { cn, calculateExamScore } from "@/lib/utils";
 import type { TopicAnalysisItem } from "@/types/exam";
 import type { ExamResultState } from "@/types/examResult";
 import { toast } from "sonner";
@@ -33,7 +33,9 @@ const formatTime = (timeSpentSeconds: number) => {
 
 const formatScore = (score: number) => {
   const rounded = Math.round(score * 10) / 10;
-  return Number.isInteger(rounded) ? `${rounded.toFixed(0)}.0` : rounded.toFixed(1);
+  return Number.isInteger(rounded)
+    ? `${rounded.toFixed(0)}.0`
+    : rounded.toFixed(1);
 };
 
 const getResultMessage = (accuracy: number) => {
@@ -86,7 +88,11 @@ const ExamResultPage = () => {
       return 0;
     }
 
-    return (result.correctCount / result.totalQuestions) * 10;
+    return calculateExamScore(
+      result.correctCount,
+      result.totalQuestions,
+      result.examTitle,
+    );
   }, [result]);
 
   const resultMessage = useMemo(() => getResultMessage(accuracy), [accuracy]);
@@ -168,19 +174,25 @@ const ExamResultPage = () => {
                 <span className="font-auth-heading text-[3rem] font-black leading-none tracking-[-0.07em]">
                   {formatScore(score)}
                 </span>
-                <span className="pb-1 text-[1.25rem] font-semibold text-white/62">/10</span>
+                <span className="pb-1 text-[1.25rem] font-semibold text-white/62">
+                  /10
+                </span>
               </div>
 
               <div className="mt-4 grid grid-cols-2 border-t border-white/18 pt-3">
                 <div className="border-r border-white/18 px-3">
-                  <p className="text-[0.72rem] font-medium text-white/68">Thời gian làm bài</p>
+                  <p className="text-[0.72rem] font-medium text-white/68">
+                    Thời gian làm bài
+                  </p>
                   <div className="mt-1 flex items-center justify-center gap-1.5 text-[0.84rem] font-black">
                     <Timer className="size-3.5" />
                     <span>{formatTime(result.timeSpentSeconds)}</span>
                   </div>
                 </div>
                 <div className="px-3">
-                  <p className="text-[0.72rem] font-medium text-white/68">Số câu đúng</p>
+                  <p className="text-[0.72rem] font-medium text-white/68">
+                    Số câu đúng
+                  </p>
                   <div className="mt-1 flex items-center justify-center gap-1.5 text-[0.84rem] font-black">
                     <CheckCircle2 className="size-3.5" />
                     <span>
@@ -221,7 +233,9 @@ const ExamResultPage = () => {
                   {accuracy}%
                 </div>
               </div>
-              <p className="mt-2 text-[0.76rem] font-bold text-muted-foreground">Độ chính xác</p>
+              <p className="mt-2 text-[0.76rem] font-bold text-muted-foreground">
+                Độ chính xác
+              </p>
             </article>
 
             <article className="rounded-[1rem] border border-border/70 bg-card px-3 py-3.5 text-center shadow-[0_16px_32px_-28px_hsl(var(--foreground)/0.22)]">
@@ -229,7 +243,9 @@ const ExamResultPage = () => {
                 <Trophy className="size-6" />
               </div>
               <p className="mt-2 text-[0.68rem] font-black uppercase tracking-[0.02em] text-foreground">
-                {result.rankingRank ? `Hạng #${result.rankingRank}` : "Mới tham gia"}
+                {result.rankingRank
+                  ? `Hạng #${result.rankingRank}`
+                  : "Mới tham gia"}
               </p>
               <p className="mt-1 text-[0.66rem] font-bold uppercase tracking-[0.06em] text-slate-500">
                 Xếp hạng
@@ -242,7 +258,9 @@ const ExamResultPage = () => {
               <Check className="size-4.5" strokeWidth={3} />
             </div>
             <div>
-              <h2 className="text-[0.88rem] font-black text-emerald-950">{resultMessage.title}</h2>
+              <h2 className="text-[0.88rem] font-black text-emerald-950">
+                {resultMessage.title}
+              </h2>
               <p className="mt-1 text-[0.78rem] leading-5 text-emerald-900/92">
                 {resultMessage.description}
               </p>
@@ -259,8 +277,12 @@ const ExamResultPage = () => {
                   <SubjectIcon className="size-4" />
                 </div>
                 <div>
-                  <p className="text-[0.82rem] font-bold text-foreground">{result.subjectName}</p>
-                  <p className="text-[0.68rem] font-semibold text-muted-foreground">{result.examTitle}</p>
+                  <p className="text-[0.82rem] font-bold text-foreground">
+                    {result.subjectName}
+                  </p>
+                  <p className="text-[0.68rem] font-semibold text-muted-foreground">
+                    {result.examTitle}
+                  </p>
                 </div>
               </div>
 
@@ -276,7 +298,7 @@ const ExamResultPage = () => {
                           "text-[0.82rem] font-black",
                           topic.tone === "primary" && "text-primary",
                           topic.tone === "orange" && "text-orange-500",
-                          topic.tone === "emerald" && "text-emerald-500"
+                          topic.tone === "emerald" && "text-emerald-500",
                         )}
                       >
                         {topic.percent}%
@@ -284,7 +306,10 @@ const ExamResultPage = () => {
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                       <div
-                        className={cn("h-full rounded-full", toneClassName[topic.tone])}
+                        className={cn(
+                          "h-full rounded-full",
+                          toneClassName[topic.tone],
+                        )}
                         style={{ width: `${topic.percent}%` }}
                       />
                     </div>
@@ -299,9 +324,12 @@ const ExamResultPage = () => {
           <Button
             type="button"
             onClick={() =>
-              navigate(`/practice/${result.subjectSlug}/exam/${result.examId}/solutions`, {
-                state: result,
-              })
+              navigate(
+                `/practice/${result.subjectSlug}/exam/${result.examId}/solutions`,
+                {
+                  state: result,
+                },
+              )
             }
             className="h-11.5 w-full rounded-[1rem] text-[0.84rem] font-black shadow-[0_20px_36px_-24px_hsl(var(--primary)/0.68)]"
           >

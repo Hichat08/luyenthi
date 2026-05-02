@@ -1,7 +1,7 @@
 import RichQuestionContent from "@/components/exam/RichQuestionContent";
 import { Button } from "@/components/ui/button";
 import { readLastExamResult } from "@/lib/examResultStorage";
-import { cn } from "@/lib/utils";
+import { cn, calculateExamScore } from "@/lib/utils";
 import type { ExamResultState } from "@/types/examResult";
 import { toast } from "sonner";
 import {
@@ -40,7 +40,11 @@ const ExamDetailedSolutionPage = () => {
       return 0;
     }
 
-    return (result.correctCount / result.totalQuestions) * 10;
+    return calculateExamScore(
+      result.correctCount,
+      result.totalQuestions,
+      result.examTitle,
+    );
   }, [result]);
 
   const visibleQuestions = useMemo(() => {
@@ -103,9 +107,12 @@ const ExamDetailedSolutionPage = () => {
             <button
               type="button"
               onClick={() =>
-                navigate(`/practice/${result.subjectSlug}/exam/${result.examId}/result`, {
-                  state: result,
-                })
+                navigate(
+                  `/practice/${result.subjectSlug}/exam/${result.examId}/result`,
+                  {
+                    state: result,
+                  },
+                )
               }
               className="grid size-10 place-items-center rounded-full text-primary transition hover:bg-primary/10"
               aria-label="Quay lại kết quả bài thi"
@@ -174,7 +181,7 @@ const ExamDetailedSolutionPage = () => {
                       "overflow-hidden rounded-[1.2rem] border bg-card shadow-[0_16px_34px_-28px_hsl(var(--foreground)/0.18)]",
                       question.isCorrect
                         ? "border-border/70"
-                        : "border-r border-y border-border/70 border-l-4 border-l-red-500"
+                        : "border-r border-y border-border/70 border-l-4 border-l-red-500",
                     )}
                   >
                     <div className="flex items-start gap-4 px-4 py-4">
@@ -183,7 +190,7 @@ const ExamDetailedSolutionPage = () => {
                           "flex size-11 shrink-0 items-center justify-center rounded-full",
                           question.isCorrect
                             ? "bg-emerald-100 text-emerald-600"
-                            : "bg-red-100 text-red-600"
+                            : "bg-red-100 text-red-600",
                         )}
                       >
                         {question.isCorrect ? (

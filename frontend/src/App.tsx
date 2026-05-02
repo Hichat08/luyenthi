@@ -13,6 +13,7 @@ import ProfilePage from "./pages/ProfilePage";
 import PracticePage from "./pages/PracticePage";
 import RankingPage from "./pages/RankingPage";
 import SubjectPracticePage from "./pages/SubjectPracticePage";
+import MidFinalExamPracticePage from "./pages/MidFinalExamPracticePage";
 import MultipleChoiceExamPage from "./pages/MultipleChoiceExamPage";
 import LiteratureExamPage from "./pages/LiteratureExamPage";
 import ExamResultPage from "./pages/ExamResultPage";
@@ -45,28 +46,17 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* public routes */}
-          <Route
-            path="/signin"
-            element={<SignInPage />}
-          />
-          <Route
-            path="/signup"
-            element={<SignUpPage />}
-          />
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
 
           {/* protectect routes */}
           <Route element={<ProtectedRoute allowedRoles={["user"]} />}>
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/practice" element={<PracticePage />} />
             <Route
-              path="/home"
-              element={<HomePage />}
-            />
-            <Route
-              path="/profile"
-              element={<ProfilePage />}
-            />
-            <Route
-              path="/practice"
-              element={<PracticePage />}
+              path="/practice/luyen-de-giua-cuoi-ki"
+              element={<MidFinalExamPracticePage />}
             />
             <Route
               path="/practice/:subjectSlug"
@@ -88,36 +78,18 @@ function App() {
               path="/practice/:subjectSlug/essay/:examId"
               element={<LiteratureExamPage />}
             />
-            <Route
-              path="/chat"
-              element={<ChatAppPage />}
-            />
-            <Route
-              path="/ranking"
-              element={<RankingPage />}
-            />
-            <Route
-              path="/"
-              element={<Navigate to="/home" replace />}
-            />
+            <Route path="/chat" element={<ChatAppPage />} />
+            <Route path="/ranking" element={<RankingPage />} />
+            <Route path="/" element={<Navigate to="/home" replace />} />
           </Route>
           <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-            <Route
-              path="/admin"
-              element={<AdminDashboardPage />}
-            />
+            <Route path="/admin" element={<AdminDashboardPage />} />
             <Route
               path="/admin/notifications"
               element={<AdminNotificationsPage />}
             />
-            <Route
-              path="/admin/analytics"
-              element={<AdminAnalyticsPage />}
-            />
-            <Route
-              path="/admin/exams/new"
-              element={<AdminExamBuilderPage />}
-            />
+            <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+            <Route path="/admin/exams/new" element={<AdminExamBuilderPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

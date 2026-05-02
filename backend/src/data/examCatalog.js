@@ -26,6 +26,7 @@ const subjectConfigs = {
   "tin học": {
     titles: [
       "Thi thử Tin học - Thuật toán và dữ liệu",
+      "Thi thử cuối kì 2 - Tin học",
       "Đề minh họa tốt nghiệp - Môn Tin học",
       "Đề chuyên Tin - Cấu trúc dữ liệu nâng cao",
     ],
@@ -134,25 +135,31 @@ const createGeneratedQuestion = (subject, topic, index) => {
       "Bước 3: Loại trừ phương án sai và giữ lại đáp án phù hợp nhất.",
     ],
     explanationConclusion: `Vậy đáp án đúng là ${correctLabel}.`,
-    formula: subject === "Toán" && questionNumber % 5 === 0 ? `Công thức trọng tâm câu ${questionNumber}` : "",
+    formula:
+      subject === "Toán" && questionNumber % 5 === 0
+        ? `Công thức trọng tâm câu ${questionNumber}`
+        : "",
   };
 };
 
 const buildMultipleChoiceQuestions = (subject, topics) =>
   Array.from({ length: 20 }, (_, index) =>
-    createGeneratedQuestion(subject, topics[index % topics.length], index)
+    createGeneratedQuestion(subject, topics[index % topics.length], index),
   );
 
 const buildInformaticsQuestionBank = () =>
   informaticsQuestionBank.map((question, index) => ({
     id: index + 1,
-    topicLabel: normalizeImportedText(question.title) || `Bài ${question.lesson}`,
+    topicLabel:
+      normalizeImportedText(question.title) || `Bài ${question.lesson}`,
     prompt: normalizeImportedText(question.q),
     imageUrl: "",
     hint: `Tập trung vào từ khóa của chuyên đề ${(
       normalizeImportedText(question.title) || `bài ${question.lesson}`
     ).toLowerCase()} để loại trừ đáp án nhiễu.`,
-    options: [question.A, question.B, question.C, question.D].map(normalizeImportedText),
+    options: [question.A, question.B, question.C, question.D].map(
+      normalizeImportedText,
+    ),
     correctIndex: 0,
     explanationTitle: "Đáp án và phân tích",
     explanationSteps: [
@@ -189,7 +196,9 @@ const buildExamDocumentsForSubject = (subjectName) => {
   };
 
   const subjectSlug = createSubjectSlug(subjectName);
-  const examType = isLiteratureSubject(subjectName) ? "essay" : "multiple_choice";
+  const examType = isLiteratureSubject(subjectName)
+    ? "essay"
+    : "multiple_choice";
   const isInformaticsSubject = createSubjectSlug(subjectName) === "tin-hoc";
   const questions =
     examType === "multiple_choice"
@@ -199,20 +208,47 @@ const buildExamDocumentsForSubject = (subjectName) => {
       : [];
 
   return config.titles.map((title, index) => {
+    const isFinalTerm2Exam =
+      title.toLowerCase().includes("thi thử cuối kì 2") ||
+      title.toLowerCase().includes("thi thử cuối kỳ 2");
+    const durationMinutes =
+      examType === "essay"
+        ? 120
+        : isInformaticsSubject
+          ? isFinalTerm2Exam
+            ? 50
+            : 45
+          : 90;
+
     return {
       examId: `${subjectSlug}-exam-${index + 1}`,
       subject: subjectName,
       subjectSlug,
       examType,
       title,
-      durationMinutes: examType === "essay" ? 120 : isInformaticsSubject ? 45 : 90,
+      durationMinutes,
       questionCount: examType === "essay" ? 2 : questions.length,
-      difficulty: index === 0 ? "Khó" : index === 1 ? "Trung bình" : "Rất khó",
-      category: index === 0 ? "self-study" : index === 1 ? "illustration" : "specialized",
+      difficulty:
+        index === 0
+          ? "Khó"
+          : index === 1
+            ? "Trung bình"
+            : index === 2
+              ? "Rất khó"
+              : "Trung bình",
+      category:
+        index === 0
+          ? "self-study"
+          : index === 1
+            ? "illustration"
+            : index === 2
+              ? "specialized"
+              : "self-study",
       imageUrl: defaultImageSet[index] ?? defaultImageSet[0],
       badge: index === 0 ? "Hot" : index === 1 ? "Mới" : "",
       questions,
-      essayContent: examType === "essay" ? buildEssayContent(config.promptStem) : {},
+      essayContent:
+        examType === "essay" ? buildEssayContent(config.promptStem) : {},
     };
   });
 };

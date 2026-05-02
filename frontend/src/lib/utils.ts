@@ -61,3 +61,25 @@ export const formatMessageTime = (date: Date) => {
     }/${date.getFullYear()} ${timeStr}`; // ví dụ: "15/12/2023 18:40"
   }
 };
+
+export const calculateExamScore = (
+  correctCount: number,
+  totalQuestions: number,
+  examTitle?: string,
+) => {
+  const total = Math.max(0, totalQuestions);
+  if (total === 0) {
+    return 0;
+  }
+
+  const normalizedTitle = `${examTitle ?? ""}`.toLowerCase();
+  const isFinalTerm2 =
+    normalizedTitle.includes("thi thử cuối kì 2") ||
+    normalizedTitle.includes("thi thử cuối kỳ 2");
+
+  if (isFinalTerm2) {
+    return (correctCount / total) * 10;
+  }
+
+  return (correctCount / total) * 10;
+};
