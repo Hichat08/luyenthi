@@ -79,7 +79,7 @@ export const getExams = async (req, res) => {
     }
 
     const persistedExams = await Exam.find(query)
-      .sort({ examId: 1 })
+      .sort({ createdAt: -1, updatedAt: -1, examId: 1 })
       .select("-questions -essayContent")
       .lean();
 
