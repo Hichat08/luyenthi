@@ -80,6 +80,7 @@ export interface AdminAnalyticsResponse {
 }
 
 export interface AdminStudentManagementResponse {
+  serverTime?: string;
   stats: {
     onlineCandidates: number;
     currentlyTakingExamCount: number;
@@ -109,6 +110,16 @@ export interface AdminStudentManagementResponse {
     score: number | null;
     warningCount: number;
     lastSubmittedAt?: string | null;
+  }>;
+  suspiciousAttempts: Array<{
+    _id: string;
+    userId: string;
+    subject?: string;
+    examTitle?: string;
+    suspiciousExitCount: number;
+    flaggedForReview: boolean;
+    autoSubmittedForCheating: boolean;
+    submittedAt?: string;
   }>;
 }
 

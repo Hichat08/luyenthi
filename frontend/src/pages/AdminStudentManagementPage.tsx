@@ -20,6 +20,7 @@ import { toast } from "sonner";
 export default function AdminStudentManagementPage() {
   const [data, setData] = useState<AdminStudentManagementResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -32,9 +33,13 @@ export default function AdminStudentManagementPage() {
         const response = await adminService.getStudentManagement();
         if (!cancelled) {
           setData(response);
+          setFetchError(null);
         }
       } catch (error) {
         console.error("Không thể tải dữ liệu quản lý học viên", error);
+        if (!cancelled) {
+          setFetchError("Không thể tải dữ liệu realtime từ máy chủ.");
+        }
         if (showError && !cancelled) {
           toast.error("Không thể tải dữ liệu quản lý học viên.");
         }
@@ -75,6 +80,7 @@ export default function AdminStudentManagementPage() {
 
   const studentRows = data?.studentRealtimeRows ?? [];
   const latestSubmissions = data?.latestSubmissions ?? [];
+  const suspiciousAttempts = data?.suspiciousAttempts ?? [];
 
   const getStatusMeta = (status: string, warnings: number) => {
     if (warnings >= 3) return { label: "Nghi gian lận", tone: "text-rose-600" };
@@ -135,6 +141,10 @@ export default function AdminStudentManagementPage() {
 
         <article className="rounded-2xl border border-border/70 bg-card p-4">
           <h2 className="text-base font-black">Thông báo trực tiếp</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Cập nhật lần cuối:{" "}
+            {data?.serverTime ? new Date(data.serverTime).toLocaleString("vi-VN") : "--"}
+          </p>
           <div className="mt-3 space-y-2">
             {latestSubmissions.map((item) => (
               <div
@@ -153,12 +163,25 @@ export default function AdminStudentManagementPage() {
             {!loading && latestSubmissions.length === 0 ? (
               <p className="text-sm text-muted-foreground">Chưa có bài nộp mới trong hôm nay.</p>
             ) : null}
+            {fetchError ? (
+              <p className="text-sm font-semibold text-rose-600">{fetchError}</p>
+            ) : null}
           </div>
         </article>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-3">
-        <article className="rounded-2xl border border-border/70 bg-card p-4"><h3 className="font-black">Xem bài làm chi tiết</h3><p className="mt-2 text-sm text-muted-foreground">Xem đáp án, lịch sử đổi đáp án, thời gian từng câu và ảnh camera lúc thi.</p></article>
+        <article className="rounded-2xl border border-border/70 bg-card p-4">
+          <h3 className="font-black">Cảnh báo gian lận mới nhất</h3>
+          <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+            {suspiciousAttempts.slice(0, 3).map((item) => (
+              <p key={item._id}>
+                {item.subject || "Chưa rõ môn"} • {item.suspiciousExitCount} lần rời tab
+              </p>
+            ))}
+            {suspiciousAttempts.length === 0 ? <p>Chưa có cảnh báo mới trong hôm nay.</p> : null}
+          </div>
+        </article>
         <article className="rounded-2xl border border-border/70 bg-card p-4"><h3 className="font-black">Leaderboard realtime</h3><p className="mt-2 text-sm text-muted-foreground">Top điểm cao, nộp nhanh, ổn định theo lớp/trường.</p></article>
         <article className="rounded-2xl border border-border/70 bg-card p-4"><h3 className="font-black">Bảo mật & phân quyền</h3><p className="mt-2 text-sm text-muted-foreground">JWT, rate limit, audit log, vai trò Super Admin / Giáo viên / Giám thị.</p></article>
       </section>
