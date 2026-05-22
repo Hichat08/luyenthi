@@ -60,6 +60,23 @@ type UpcomingExam = {
 
 const upcomingExams: UpcomingExam[] = [];
 const ALWAYS_AVAILABLE_PRACTICE_SUBJECTS = ["Tin học"];
+const EXTERNAL_PRACTICE_LINKS = [
+  {
+    icon: "💻",
+    label: "Thi thử Tin học",
+    url: "https://thithuthptqgtin.vercel.app",
+  },
+  {
+    icon: "⚙️",
+    label: "Thi thử Công nghệ",
+    url: "https://thithuthptqgcongnghe.vercel.app",
+  },
+  {
+    icon: "📘",
+    label: "Thi thử Toán",
+    url: "https://thithuthptqgtoan.vercel.app",
+  },
+] as const;
 
 const canonicalizePracticeSubject = (subject: string) => {
   const normalized = normalizeSubjectKey(subject);
@@ -331,7 +348,7 @@ const PracticePage = () => {
         </section>
 
         <section className="rounded-[1.4rem] border border-border/70 bg-card p-4 shadow-[0_24px_48px_-34px_hsl(var(--primary)/0.18)]">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary/80">
                 Trang mới
@@ -339,18 +356,25 @@ const PracticePage = () => {
               <h2 className="mt-2 text-lg font-black text-foreground">
                 Luyện đề giữa kì & cuối kì
               </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Mở trang riêng để luyện đề giữa kì và cuối kì theo mẫu đề thi
-                thử.
-              </p>
+              <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                <p>📚 Hệ thống hiện hỗ trợ các môn:</p>
+                {EXTERNAL_PRACTICE_LINKS.map(({ icon, label, url }) => (
+                  <p key={url}>
+                    {icon} {label}
+                    <br />
+                    🔗{" "}
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-primary underline underline-offset-2"
+                    >
+                      {url}
+                    </a>
+                  </p>
+                ))}
+              </div>
             </div>
-            <button
-              type="button"
-              className="rounded-2xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
-              onClick={() => navigate("/practice/luyen-de-giua-cuoi-ki")}
-            >
-              Xem trang
-            </button>
           </div>
         </section>
 

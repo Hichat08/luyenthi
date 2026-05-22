@@ -172,3 +172,131 @@ export const getAdminAnalytics = async (_req, res) => {
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
+
+export const getAdminStudentManagement = async (_req, res) => {
+  try {
+    const todayStart = getTodayStart();
+    const todayEnd = getTodayEnd();
+
+    const [users, attempts] = await Promise.all([
+      User.find({ role: "user" })
+        .sort({ lastActiveAt: -1 })
+        .select("displayName username userCode classroom lastActiveAt createdAt"),
+      PracticeAttempt.find({})
+        .sort({ submittedAt: -1 })
+        .select(
+          "userId examTitle subject correctCount wrongCount timeSpentSeconds submittedAt suspiciousExitCount flaggedForReview autoSubmittedForCheating"
+        )
+        .lean(),
+    ]);
+    const usersById = new Map(users.map((user) => [`${user._id}`, user]));
+    const attemptsByUser = new Map();
+
+    attempts.forEach((attempt) => {
+      const userId = `${attempt.userId}`;
+      const current = attemptsByUser.get(userId) ?? [];
+      current.push(attempt);
+      attemptsByUser.set(userId, current);
+    });
+
+    const attemptsToday = attempts.filter((attempt) => {
+      const submittedAt = attempt.submittedAt ? new Date(attempt.submittedAt) : null;
+      return submittedAt && submittedAt >= todayStart && submittedAt <= todayEnd;
+    });
+
+    const submittedTodayCount = attemptsToday.length;
+    const onlineCandidates = users.filter(
+      (user) => user.lastActiveAt && new Date(user.lastActiveAt) >= todayStart
+    ).length;
+    const currentlyTakingExamCount = Math.max(onlineCandidates - submittedTodayCount, 0);
+
+    const scoresToday = attemptsToday.map((attempt) => getAttemptScore(attempt));
+    const averageScore =
+      scoresToday.length > 0
+        ? Number((scoresToday.reduce((sum, score) => sum + score, 0) / scoresToday.length).toFixed(2))
+        : 0;
+    const highestScore = scoresToday.length > 0 ? Number(Math.max(...scoresToday).toFixed(2)) : 0;
+    const completionRate =
+      onlineCandidates > 0 ? Number(((submittedTodayCount / onlineCandidates) * 100).toFixed(1)) : 0;
+
+    const suspiciousAttemptsToday = attemptsToday.filter(
+      (attempt) => (attempt.suspiciousExitCount ?? 0) > 0 || attempt.flaggedForReview
+    );
+
+    const latestSubmissions = attemptsToday.slice(0, 10).map((attempt) => {
+      const owner = usersById.get(`${attempt.userId}`);
+      return {
+        attemptId: attempt._id,
+        displayName: owner?.displayName ?? "Không rõ",
+        classroom: owner?.classroom ?? "",
+        userCode: owner?.userCode ?? "",
+        subject: attempt.subject ?? "",
+        score: Number(getAttemptScore(attempt).toFixed(2)),
+        timeSpentSeconds: attempt.timeSpentSeconds ?? 0,
+        submittedAt: attempt.submittedAt,
+      };
+    });
+
+    const studentRealtimeRows = users.slice(0, 80).map((user) => {
+      const userAttempts = attemptsByUser.get(`${user._id}`) ?? [];
+      const lastAttempt = userAttempts[0];
+      const warningCount = userAttempts.reduce(
+        (sum, attempt) => sum + Math.max(attempt.suspiciousExitCount ?? 0, 0),
+        0
+      );
+
+      let status = "offline";
+      if (lastAttempt?.submittedAt && new Date(lastAttempt.submittedAt) >= todayStart) {
+        status = "submitted";
+      } else if (user.lastActiveAt && new Date(user.lastActiveAt) >= todayStart) {
+        status = "taking_exam";
+      }
+
+      return {
+        userId: user._id,
+        displayName: user.displayName,
+        classroom: user.classroom ?? "",
+        userCode: user.userCode ?? "",
+        status,
+        timeSpentSeconds: lastAttempt?.timeSpentSeconds ?? 0,
+        score: lastAttempt ? Number(getAttemptScore(lastAttempt).toFixed(2)) : null,
+        warningCount,
+        lastSubmittedAt: lastAttempt?.submittedAt ?? null,
+      };
+    });
+
+    studentRealtimeRows.sort((a, b) => {
+      const aTime = a.lastSubmittedAt ? new Date(a.lastSubmittedAt).getTime() : 0;
+      const bTime = b.lastSubmittedAt ? new Date(b.lastSubmittedAt).getTime() : 0;
+
+      if (a.status === "submitted" && b.status === "submitted") {
+        return bTime - aTime;
+      }
+      if (a.status === "submitted") {
+        return -1;
+      }
+      if (b.status === "submitted") {
+        return 1;
+      }
+      return b.warningCount - a.warningCount;
+    });
+
+    return res.status(200).json({
+      stats: {
+        onlineCandidates,
+        currentlyTakingExamCount,
+        submittedTodayCount,
+        averageScore,
+        highestScore,
+        completionRate,
+        fraudAlertsTodayCount: suspiciousAttemptsToday.length,
+      },
+      latestSubmissions,
+      studentRealtimeRows,
+      suspiciousAttempts: suspiciousAttemptsToday.slice(0, 30),
+    });
+  } catch (error) {
+    console.error("Lỗi khi tải trang quản lý học viên admin", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
