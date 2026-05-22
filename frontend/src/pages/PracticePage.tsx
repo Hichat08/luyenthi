@@ -354,7 +354,7 @@ const PracticePage = () => {
                 Trang mới
               </p>
               <h2 className="mt-2 text-lg font-black text-foreground">
-                Luyện đề giữa kì & cuối kì
+                Thi Thử THPTG các môn đang hỗ trợ
               </h2>
               <div className="mt-3 space-y-2 text-sm text-muted-foreground">
                 <p>📚 Hệ thống hiện hỗ trợ các môn:</p>
