@@ -1,4 +1,5 @@
 import api from "@/lib/axios";
+
 import type {
   PracticeExamSummary,
   SubjectExamDifficulty,
@@ -47,12 +48,18 @@ export type AdminNotificationTargetUser =
 
 export interface AdminNotificationRecord {
   id: string;
+
   title: string;
+
   body: string;
 
-  category: "study" | "system";
+  category:
+    | "study"
+    | "system";
 
-  audience: "all" | "selected";
+  audience:
+    | "all"
+    | "selected";
 
   createdAt?: string;
 
@@ -62,32 +69,51 @@ export interface AdminNotificationRecord {
     username: string;
   } | null;
 
-  recipients: AdminNotificationTargetUser[];
+  recipients:
+    AdminNotificationTargetUser[];
 }
 
 export interface AdminAnalyticsUserScoreRow {
   _id: string;
+
   displayName: string;
+
   username: string;
+
   userCode?: string;
+
   classroom?: string;
+
   lastActiveAt?: string | null;
+
   todayExamCount: number;
+
   averageScore: number;
+
   todayAverageScore: number;
 }
 
 export interface AdminSuspiciousAttemptRow {
   _id: string;
+
   userId: string;
+
   displayName: string;
+
   username: string;
+
   userCode?: string;
+
   examTitle?: string;
+
   subject?: string;
+
   suspiciousExitCount: number;
+
   autoSubmittedForCheating: boolean;
+
   flaggedForReview: boolean;
+
   submittedAt?: string;
 }
 
@@ -117,33 +143,50 @@ export interface AdminStudentManagementResponse {
 
   stats: {
     onlineCandidates: number;
+
     currentlyTakingExamCount: number;
+
     submittedTodayCount: number;
+
     averageScore: number;
+
     highestScore: number;
+
     completionRate: number;
+
     fraudAlertsTodayCount: number;
   };
 
   latestSubmissions: Array<{
     attemptId: string;
+
     displayName: string;
+
     classroom?: string;
+
     userCode?: string;
+
     subject?: string;
+
     score: number;
+
     timeSpentSeconds: number;
+
     submittedAt?: string;
   }>;
 
   studentRealtimeRows: Array<{
     userId: string;
+
     displayName: string;
+
     classroom?: string;
+
     userCode?: string;
 
     status:
       | "offline"
+      | "online"
       | "taking_exam"
       | "submitted"
       | string;
@@ -159,34 +202,54 @@ export interface AdminStudentManagementResponse {
 
   suspiciousAttempts: Array<{
     _id: string;
+
     userId: string;
+
     subject?: string;
+
     examTitle?: string;
+
     suspiciousExitCount: number;
+
     flaggedForReview: boolean;
+
     autoSubmittedForCheating: boolean;
+
     submittedAt?: string;
   }>;
 }
 
 export interface AdminCreateExamQuestionPayload {
   topicLabel?: string;
+
   prompt: string;
+
   imageUrl?: string;
+
   hint?: string;
+
   options: string[];
+
   correctIndex: number;
+
   explanationTitle?: string;
+
   explanationSteps?: string[];
+
   explanationConclusion?: string;
+
   formula?: string;
 }
 
 export interface AdminCreateEssayContentPayload {
   readingPassage: string;
+
   readingQuestion: string;
+
   essayPrompt: string;
+
   checklist?: string[];
+
   statusNote?: string;
 }
 
@@ -201,7 +264,8 @@ export interface AdminCreateExamPayload {
 
   durationMinutes: number;
 
-  difficulty: SubjectExamDifficulty;
+  difficulty:
+    SubjectExamDifficulty;
 
   category:
     | "illustration"
@@ -212,9 +276,11 @@ export interface AdminCreateExamPayload {
 
   badge?: string;
 
-  questions?: AdminCreateExamQuestionPayload[];
+  questions?:
+    AdminCreateExamQuestionPayload[];
 
-  essayContent?: AdminCreateEssayContentPayload;
+  essayContent?:
+    AdminCreateEssayContentPayload;
 }
 
 export const adminService = {
@@ -229,35 +295,37 @@ export const adminService = {
     return res.data as AdminOverviewResponse;
   },
 
-  searchUsersForNotification: async (
-    query: string
+  searchUsersForNotification:
+    async (query: string) => {
+      const res = await api.get(
+        "/admin/users/search",
+        {
+          params: { q: query },
+          withCredentials: true,
+        }
+      );
+
+      return res.data
+        .users as AdminNotificationTargetUser[];
+    },
+
+  createNotification: async (
+    payload: {
+      title: string;
+
+      body: string;
+
+      category:
+        | "study"
+        | "system";
+
+      audience:
+        | "all"
+        | "selected";
+
+      recipientIds?: string[];
+    }
   ) => {
-    const res = await api.get(
-      "/admin/users/search",
-      {
-        params: { q: query },
-        withCredentials: true,
-      }
-    );
-
-    return res.data
-      .users as AdminNotificationTargetUser[];
-  },
-
-  createNotification: async (payload: {
-    title: string;
-    body: string;
-
-    category:
-      | "study"
-      | "system";
-
-    audience:
-      | "all"
-      | "selected";
-
-    recipientIds?: string[];
-  }) => {
     const res = await api.post(
       "/admin/notifications",
       payload,
@@ -295,16 +363,17 @@ export const adminService = {
     return res.data as AdminAnalyticsResponse;
   },
 
-  getStudentManagement: async () => {
-    const res = await api.get(
-      "/admin/students/management",
-      {
-        withCredentials: true,
-      }
-    );
+  getStudentManagement:
+    async () => {
+      const res = await api.get(
+        "/admin/students/management",
+        {
+          withCredentials: true,
+        }
+      );
 
-    return res.data as AdminStudentManagementResponse;
-  },
+      return res.data as AdminStudentManagementResponse;
+    },
 
   createExam: async (
     payload: AdminCreateExamPayload

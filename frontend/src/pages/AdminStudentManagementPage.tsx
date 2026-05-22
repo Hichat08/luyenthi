@@ -25,11 +25,11 @@ export default function AdminStudentManagementPage() {
       null
     );
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [fetchError, setFetchError] = useState<
-    string | null
-  >(null);
+  const [fetchError, setFetchError] =
+    useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,9 +75,10 @@ export default function AdminStudentManagementPage() {
 
     void loadData(true);
 
-    const intervalId = window.setInterval(() => {
-      void loadData(false);
-    }, 15000);
+    const intervalId =
+      window.setInterval(() => {
+        void loadData(false);
+      }, 15000);
 
     return () => {
       cancelled = true;
@@ -176,6 +177,13 @@ export default function AdminStudentManagementPage() {
       return {
         label: "Đang thi",
         tone: "text-emerald-600",
+      };
+    }
+
+    if (status === "online") {
+      return {
+        label: "Online",
+        tone: "text-sky-600",
       };
     }
 
