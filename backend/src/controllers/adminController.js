@@ -283,6 +283,7 @@ export const getAdminStudentManagement = async (_req, res) => {
     });
 
     return res.status(200).json({
+      serverTime: new Date().toISOString(),
       stats: {
         onlineCandidates,
         currentlyTakingExamCount,
