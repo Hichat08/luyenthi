@@ -23,6 +23,7 @@ import AdminNotificationsPage from "./pages/AdminNotificationsPage";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import AdminExamBuilderPage from "./pages/AdminExamBuilderPage";
 import AdminMockExamInformaticsPage from "./pages/AdminMockExamInformaticsPage";
+import AdminStudentManagementPage from "./pages/AdminStudentManagementPage";
 
 function App() {
   const { isDark, setTheme } = useThemeStore();
@@ -90,6 +91,7 @@ function App() {
               element={<AdminNotificationsPage />}
             />
             <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+            <Route path="/admin/users" element={<AdminStudentManagementPage />} />
             <Route path="/admin/exams/new" element={<AdminExamBuilderPage />} />
             <Route path="/admin/exams/informatics-mock" element={<AdminMockExamInformaticsPage />} />
           </Route>
