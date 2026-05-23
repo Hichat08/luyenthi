@@ -31,11 +31,10 @@ const adminMenuItems: AdminMenuItem[] = [
   },
   {
     key: "users",
-    label: "Người dùng",
-    description: "Quản lý tài khoản",
+    label: "Quản lý học viên",
+    description: "Giám sát thi realtime",
     icon: Users,
     path: "/admin/users",
-    disabled: true,
   },
   {
     key: "analytics",

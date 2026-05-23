@@ -1,5 +1,9 @@
 import express from "express";
-import { getAdminAnalytics, getAdminOverview } from "../controllers/adminController.js";
+import {
+  getAdminAnalytics,
+  getAdminOverview,
+  getAdminStudentManagement,
+} from "../controllers/adminController.js";
 import { createAdminExam } from "../controllers/examController.js";
 import { authorizeRoles } from "../middlewares/authMiddleware.js";
 import {
@@ -12,6 +16,7 @@ const router = express.Router();
 
 router.get("/overview", authorizeRoles("admin"), getAdminOverview);
 router.get("/analytics", authorizeRoles("admin"), getAdminAnalytics);
+router.get("/students/management", authorizeRoles("admin"), getAdminStudentManagement);
 router.post("/exams", authorizeRoles("admin"), createAdminExam);
 router.get("/users/search", authorizeRoles("admin"), searchUsersForNotification);
 router.get("/notifications", authorizeRoles("admin"), listAdminNotifications);

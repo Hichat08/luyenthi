@@ -20,8 +20,10 @@ export interface AdminOverviewResponse {
   latestUsers: AdminOverviewUser[];
 }
 
-export interface AdminNotificationTargetUser
-  extends Pick<User, "_id" | "username" | "displayName" | "avatarUrl" | "classroom" | "userCode"> {}
+export type AdminNotificationTargetUser = Pick<
+  User,
+  "_id" | "username" | "displayName" | "avatarUrl" | "classroom" | "userCode"
+>;
 
 export interface AdminNotificationRecord {
   id: string;
@@ -75,6 +77,50 @@ export interface AdminAnalyticsResponse {
   inactiveUsers: AdminAnalyticsUserScoreRow[];
   userScores: AdminAnalyticsUserScoreRow[];
   suspiciousAttempts: AdminSuspiciousAttemptRow[];
+}
+
+export interface AdminStudentManagementResponse {
+  serverTime?: string;
+  stats: {
+    onlineCandidates: number;
+    currentlyTakingExamCount: number;
+    submittedTodayCount: number;
+    averageScore: number;
+    highestScore: number;
+    completionRate: number;
+    fraudAlertsTodayCount: number;
+  };
+  latestSubmissions: Array<{
+    attemptId: string;
+    displayName: string;
+    classroom?: string;
+    userCode?: string;
+    subject?: string;
+    score: number;
+    timeSpentSeconds: number;
+    submittedAt?: string;
+  }>;
+  studentRealtimeRows: Array<{
+    userId: string;
+    displayName: string;
+    classroom?: string;
+    userCode?: string;
+    status: "offline" | "online" | "taking_exam" | "submitted" | string;
+    timeSpentSeconds: number;
+    score: number | null;
+    warningCount: number;
+    lastSubmittedAt?: string | null;
+  }>;
+  suspiciousAttempts: Array<{
+    _id: string;
+    userId: string;
+    subject?: string;
+    examTitle?: string;
+    suspiciousExitCount: number;
+    flaggedForReview: boolean;
+    autoSubmittedForCheating: boolean;
+    submittedAt?: string;
+  }>;
 }
 
 export interface AdminCreateExamQuestionPayload {
@@ -153,6 +199,13 @@ export const adminService = {
     });
 
     return res.data as AdminAnalyticsResponse;
+  },
+  getStudentManagement: async () => {
+    const res = await api.get("/admin/students/management", {
+      withCredentials: true,
+    });
+
+    return res.data as AdminStudentManagementResponse;
   },
   createExam: async (payload: AdminCreateExamPayload) => {
     const res = await api.post("/admin/exams", payload, {
